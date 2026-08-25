@@ -1,0 +1,102 @@
+{
+	email {$ACME_EMAIL}
+}
+
+# ---------------------------------------------------------------------------
+# The thesis site. Static files, rsynced into ./site by deploy.sh.
+# ---------------------------------------------------------------------------
+{$SITE_LABEL}.{$BASE_DOMAIN} {
+	encode zstd gzip
+	root * /srv/site
+	file_server
+
+	header {
+		X-Content-Type-Options nosniff
+		Referrer-Policy strict-origin-when-cross-origin
+		Permissions-Policy "geolocation=(), microphone=(), camera=()"
+	}
+
+	# Hashed assets are immutable; the PDF and images are not.
+	@immutable path /_astro/*
+	header @immutable Cache-Control "public, max-age=31536000, immutable"
+
+	handle_errors {
+		rewrite * /404.html
+		file_server
+	}
+}
+
+# ---------------------------------------------------------------------------
+# n8n editor. n8n's own owner account is the authentication boundary.
+#
+# N8N_PREVIEW_MODE is deliberately NOT set on this instance: it would disable
+# X-Frame-Options instance-wide and skip the owner-setup redirect, on the one
+# instance that holds the credentials and can drive the robot.
+# ---------------------------------------------------------------------------
+{$N8N_LABEL}.{$BASE_DOMAIN} {
+	encode zstd gzip
+	reverse_proxy n8n:5678 {
+		flush_interval -1
+	}
+}
+
+# ---------------------------------------------------------------------------
+# Read-only live view of the robot. No authentication on purpose: the VNC
+# export runs with -viewonly, so visitors can watch but not drive.
+# ---------------------------------------------------------------------------
+{$TURTLE_LABEL}.{$BASE_DOMAIN} {
+	encode zstd gzip
+
+	header {
+		X-Content-Type-Options nosniff
+		Referrer-Policy no-referrer
+		# frame-ancestors rather than X-Frame-Options: the thesis site embeds
+		# this viewer cross-origin, and X-Frame-Options has no allow-list that
+		# browsers still honour. Still deny-by-default for everyone else.
+		Content-Security-Policy "frame-ancestors 'self' https://{$SITE_LABEL}.{$BASE_DOMAIN}"
+	}
+
+	# Live battery and state readout, served by the rover process itself so it
+	# keeps working while n8n restarts. Read-only; it never writes.
+	handle /api/* {
+		reverse_proxy ros2:8081
+	}
+
+	handle {
+		reverse_proxy ros2:6080
+	}
+}
+
+# ---------------------------------------------------------------------------
+# Workflow-canvas renderer for <n8n-demo>. A second n8n with no credentials,
+# no imported workflows and a throwaway database: the workflow JSON is
+# postMessaged in from the visitor's page, so it needs no data of its own.
+# This is the instance that may run with N8N_PREVIEW_MODE=true.
+# ---------------------------------------------------------------------------
+{$PREVIEW_LABEL}.{$BASE_DOMAIN} {
+	encode zstd gzip
+	reverse_proxy n8n-preview:5678 {
+		flush_interval -1
+	}
+}
+
+# ---------------------------------------------------------------------------
+# The PushT / RECAP demo. Static; model weights are fetched from the HF Hub at
+# runtime and are never served from here.
+# ---------------------------------------------------------------------------
+{$RECAP_LABEL}.{$BASE_DOMAIN} {
+	encode zstd gzip
+	root * /srv/recap
+	file_server
+
+	header {
+		X-Content-Type-Options nosniff
+		# Embedded by the thesis site on /demos/pusht.
+		Content-Security-Policy "frame-ancestors 'self' https://{$SITE_LABEL}.{$BASE_DOMAIN}"
+	}
+
+	handle_errors {
+		rewrite * /index.html
+		file_server
+	}
+}

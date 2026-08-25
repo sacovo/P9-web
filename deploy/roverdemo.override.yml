@@ -1,0 +1,33 @@
+# Compose override applied ONLY on this server, so the rover demo repository
+# needs no change and still runs standalone exactly as its README says.
+#
+# It does two things: attaches n8n and ros2 to the edge network so the P9 Caddy
+# can reach them by service name, and drops the demo's own published ports so
+# nothing but the edge is exposed.
+#
+#   cd ~/p9/n8n-nodes-ros2/demo
+#   docker compose -p roverdemo \
+#     -f docker-compose.yml -f ~/p9/deploy/roverdemo.override.yml \
+#     up -d n8n ros2
+#
+# `n8n` and `ros2` are named explicitly rather than starting every service:
+# the demo's own caddy sits behind its `public` profile and must stay down,
+# because this deployment terminates TLS for all five hosts instead.
+
+services:
+  n8n:
+    networks:
+      - default
+      - edge
+    ports: !reset []
+
+  ros2:
+    networks:
+      - default
+      - edge
+    ports: !reset []
+
+networks:
+  edge:
+    external: true
+    name: p9-edge

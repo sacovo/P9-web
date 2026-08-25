@@ -5,3 +5,8 @@ dist/
 .env
 .env.production
 .vercel
+
+# Server-specific, holds the n8n encryption key
+deploy/.env
+deploy/site/
+deploy/recap/

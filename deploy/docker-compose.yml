@@ -1,0 +1,70 @@
+# Edge for the P9 thesis deployment.
+#
+# The rover demo stack (n8n + ros2) is NOT defined here. It runs from its own
+# repository under the compose project name `roverdemo`, with its own caddy
+# service left out (that repo's `public` profile), so it stays standalone-
+# runnable exactly as its README documents. This file only adds the edge:
+# TLS termination, the static sites, and the canvas renderer.
+#
+# This project OWNS the shared network `p9-edge`; the demo stack joins it via
+# deploy/roverdemo.override.yml. The dependency points this way on purpose, so
+# the edge and the thesis site come up on their own — before the rover stack
+# exists, and while it is being rebuilt. Caddy resolves `n8n` and `ros2` per
+# request, so their absence is a 502 on those two hosts, not a failed start.
+
+name: p9
+
+services:
+  caddy:
+    image: caddy:2-alpine
+    restart: unless-stopped
+    ports:
+      - '80:80'
+      - '443:443'
+      - '443:443/udp'
+    environment:
+      BASE_DOMAIN: ${BASE_DOMAIN:?set BASE_DOMAIN in .env}
+      SITE_LABEL: ${SITE_LABEL:-p9}
+      N8N_LABEL: ${N8N_LABEL:-n8n-demo}
+      TURTLE_LABEL: ${TURTLE_LABEL:-n8n-turtle}
+      PREVIEW_LABEL: ${PREVIEW_LABEL:-n8n-preview}
+      RECAP_LABEL: ${RECAP_LABEL:-recap-demo}
+      ACME_EMAIL: ${ACME_EMAIL:?set ACME_EMAIL in .env}
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - ./site:/srv/site:ro
+      - ./recap:/srv/recap:ro
+      - caddy_data:/data # Let's Encrypt certs + ACME account key. Do not wipe.
+      - caddy_config:/config
+    networks:
+      - edge
+
+  # Renders workflow canvases for <n8n-demo> and nothing else. No credentials,
+  # no imported workflows, a throwaway database. N8N_PREVIEW_MODE is safe here
+  # precisely because there is nothing on this instance worth reaching.
+  n8n-preview:
+    image: ${N8N_PREVIEW_IMAGE:-docker.io/n8nio/n8n:latest}
+    restart: unless-stopped
+    environment:
+      N8N_PREVIEW_MODE: 'true'
+      N8N_PROTOCOL: https
+      N8N_HOST: ${PREVIEW_LABEL:-n8n-preview}.${BASE_DOMAIN}
+      N8N_PORT: '5678'
+      GENERIC_TIMEZONE: ${TIMEZONE:-Europe/Zurich}
+      N8N_DIAGNOSTICS_ENABLED: 'false'
+      N8N_VERSION_NOTIFICATIONS_ENABLED: 'false'
+      N8N_RUNNERS_ENABLED: 'false'
+      # Deliberately no N8N_ENCRYPTION_KEY: this instance stores no credentials.
+    tmpfs:
+      # The database is disposable, so keep it in RAM and let a restart wipe it.
+      - /home/node/.n8n:size=64m,uid=1000,gid=1000
+    networks:
+      - edge
+
+volumes:
+  caddy_data:
+  caddy_config:
+
+networks:
+  edge:
+    name: p9-edge
