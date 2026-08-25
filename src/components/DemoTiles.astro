@@ -7,14 +7,15 @@ import { hosts } from '../config';
 const availability: Record<string, boolean> = {
   rover: Boolean(hosts.turtle || hosts.n8n),
   pusht: Boolean(hosts.recap),
+  dataset: true, // hosted on the Hugging Face Hub, nothing of ours to be down
 };
 ---
 
 <section id="demos" class="shell scroll-mt-20 pt-20!">
   <p class="eyebrow">The part a PDF cannot hold</p>
-  <h3 class="rule mb-8">Two things you can drive</h3>
+  <h3 class="rule mb-8">Three things you can drive</h3>
 
-  <div class="grid gap-[var(--spacing-pad)] lg:grid-cols-2">
+  <div class="grid gap-[var(--spacing-pad)] md:grid-cols-2 lg:grid-cols-3">
     {
       demos.map((d) => (
         <article class="bracket flex flex-col border border-grey-2 bg-grey-1 p-6" data-reveal>
@@ -36,8 +37,12 @@ const availability: Record<string, boolean> = {
             ))}
           </ul>
 
-          <a href={d.href} class="bare btn mt-auto self-start">
-            Open the demo
+          <a
+            href={d.href}
+            class="bare btn mt-auto self-start"
+            {...d.external ? { rel: 'noopener', target: '_blank' } : {}}
+          >
+            {d.external ? 'Open on Hugging Face' : 'Open the demo'}
           </a>
         </article>
       ))

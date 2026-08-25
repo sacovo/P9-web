@@ -49,6 +49,30 @@ export interface Demo {
   title: string;
   body: string;
   points: string[];
+  /** Set on tiles that leave the site, so the link is marked as such. */
+  external?: boolean;
+}
+
+export interface Clip {
+  /** Extensionless: `<src>.mp4` is the video, `<src>.jpg` its poster. */
+  src: string;
+  label: string;
+  outcome: 'success' | 'failure' | 'timeout';
+  caption: string;
+}
+
+export interface LiberoPair {
+  title: string;
+  task: string;
+  body: string;
+  clips: Clip[];
+}
+
+export interface Libero {
+  eyebrow: string;
+  heading: string;
+  note: string;
+  pairs: LiberoPair[];
 }
 
 export interface Figure {
@@ -86,11 +110,21 @@ export interface P9Content {
   contributions: Contribution[];
   supporting: Supporting;
   results: Results;
+  libero: Libero;
   demos: Demo[];
   figures: Figures;
 }
 
 export const content: P9Content = raw;
 
-export const { site, hero, overview, contributions, supporting, results, demos, figures } =
-  content;
+export const {
+  site,
+  hero,
+  overview,
+  contributions,
+  supporting,
+  results,
+  libero,
+  demos,
+  figures,
+} = content;

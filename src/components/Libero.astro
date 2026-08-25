@@ -1,0 +1,101 @@
+---
+import { libero } from '../lib/p9';
+
+/**
+ * Clips are 256×256 and a few seconds each — the whole section is under
+ * 500 kB — so they autoplay muted and loop, which is what makes a pair
+ * readable at a glance. Under prefers-reduced-motion the script below leaves
+ * them paused and shows controls instead; the poster frame carries the
+ * section until someone presses play.
+ */
+const outcomeStyle: Record<string, string> = {
+  success: 'border-ink',
+  failure: 'border-grey-3',
+  timeout: 'border-grey-3',
+};
+---
+
+<section id="libero" class="shell scroll-mt-20 pt-20!">
+  <p class="eyebrow">{libero.eyebrow}</p>
+  <h3 class="rule mb-3">{libero.heading}</h3>
+  <p class="mb-10 max-w-[70ch] text-grey-4">{libero.note}</p>
+
+  <div class="grid gap-14">
+    {
+      libero.pairs.map((pair) => (
+        <article data-reveal>
+          <div class="grid gap-x-[var(--spacing-pad)] gap-y-4 lg:grid-cols-12">
+            <div class="lg:col-span-4">
+              <h4 class="text-[1.05rem] leading-[140%]">{pair.title}</h4>
+              <p class="mt-2 mb-3 text-[0.82rem] tracking-[0.04em] text-grey-3 uppercase">
+                {pair.task}
+              </p>
+              <p class="mb-0 text-[0.92rem] text-grey-4">{pair.body}</p>
+            </div>
+
+            <div class="grid gap-[var(--spacing-pad)] md:grid-cols-2 lg:col-span-7 lg:col-start-6">
+              {pair.clips.map((clip) => (
+                <figure class="m-0">
+                  <video
+                    class:list={[
+                      'block w-full border-2 bg-grey-1',
+                      outcomeStyle[clip.outcome] ?? 'border-grey-2',
+                    ]}
+                    src={`${clip.src}.mp4`}
+                    poster={`${clip.src}.jpg`}
+                    width="256"
+                    height="256"
+                    muted
+                    loop
+                    autoplay
+                    playsinline
+                    preload="metadata"
+                    aria-label={`${clip.label}: ${clip.caption}`}
+                  />
+                  <figcaption class="mt-2">
+                    <span class="flex items-baseline justify-between gap-2">
+                      <span class="text-[0.88rem] font-semibold">{clip.label}</span>
+                      <span class="text-[0.72rem] tracking-[0.08em] text-grey-3 uppercase">
+                        {clip.outcome}
+                      </span>
+                    </span>
+                    <span class="mt-1 block text-[0.8rem] leading-[160%] text-grey-3">
+                      {clip.caption}
+                    </span>
+                  </figcaption>
+                </figure>
+              ))}
+            </div>
+          </div>
+        </article>
+      ))
+    }
+  </div>
+</section>
+
+<script>
+  // Autoplay is set in the markup so the clips run for everyone by default.
+  // Anyone who has asked for reduced motion gets them paused with controls,
+  // which is the accessible behaviour but a poor default for a 2-second loop.
+  const reduced = window.matchMedia('(prefers-reduced-motion: reduce)');
+
+  const apply = () => {
+    document.querySelectorAll<HTMLVideoElement>('#libero video').forEach((video) => {
+      if (reduced.matches) {
+        video.autoplay = false;
+        video.controls = true;
+        video.pause();
+      } else {
+        video.controls = false;
+        video.play().catch(() => {
+          // Some browsers refuse autoplay even when muted; give the viewer
+          // a control rather than a still that looks broken.
+          video.controls = true;
+        });
+      }
+    });
+  };
+
+  apply();
+  reduced.addEventListener('change', apply);
+</script>

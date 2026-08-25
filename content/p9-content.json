@@ -104,6 +104,19 @@
         "Sampled action chunks drawn on the arena",
         "Guidance weight and the denoising steps, both scrubable"
       ]
+    },
+    {
+      "id": "dataset",
+      "href": "https://huggingface.co/spaces/lerobot/visualize_dataset?path=%2Ffhnwrover%2Fmanibar-erc_various%2Fepisode_0",
+      "eyebrow": "On the Hugging Face Hub",
+      "title": "Browse the demonstrations the policy learned from",
+      "body": "Every episode the manipulator was taught, in LeRobot’s dataset viewer: camera streams, joint states and actions, scrubbable frame by frame. This is the raw material behind the policy — what a demonstration actually looks like, including the ones where the operator fumbled.",
+      "points": [
+        "Camera and state streams, synchronised per frame",
+        "Episode by episode, no download required",
+        "Apache-2.0, alongside the other fhnwrover datasets"
+      ],
+      "external": true
     }
   ],
   "figures": {
@@ -175,5 +188,69 @@
     "heading": "What it actually does",
     "body": "The pipeline is demonstrated end to end on the manipulator. The deployed policy turns a rotary panel switch on roughly four attempts in five — below a teleoperating human, but repeatable until it succeeds. Lever switches, whose motion first tensions and then snaps over, are harder and carry fewer demonstrations.",
     "open": "Plug insertion is the one substep still open, and for a reason worth stating plainly: an operator cannot teleoperate it well enough to demonstrate it, so there is nothing to imitate. A purpose-built tool now exists but has not yet been used to record it."
+  },
+  "libero": {
+    "eyebrow": "LIBERO rollouts",
+    "heading": "What the policy learned, and what it did not",
+    "note": "Evaluation episodes of the policies compared in the report. Filenames in the source encode policy, task, outcome and episode; these are three pairs where the difference is visible rather than statistical.",
+    "pairs": [
+      {
+        "title": "A skill only co-training recovers",
+        "task": "GOAL suite — “open the middle drawer of the cabinet”",
+        "body": "The skill is present in the expert demonstrations and absent from the base policy’s own rollouts. Rollout data sharpens behaviour a policy already shows; behaviour it lacks has to come back from the demonstrations, which is what co-training mixes in.",
+        "clips": [
+          {
+            "src": "/videos/drawer-base",
+            "label": "Base policy",
+            "outcome": "timeout",
+            "caption": "The gripper hovers in front of the cabinet, never engages the handle, and the episode runs out."
+          },
+          {
+            "src": "/videos/drawer-cotrain",
+            "label": "Co-trained",
+            "outcome": "success",
+            "caption": "The gripper reaches the handle and pulls the drawer open."
+          }
+        ]
+      },
+      {
+        "title": "Where long horizons break down",
+        "task": "LONG suite — one subgoal against two",
+        "body": "The suite average is dragged down by instructions that chain two subgoals, because the error of each compounds. Single-subgoal tasks in the same suite reach 70–80 %.",
+        "clips": [
+          {
+            "src": "/videos/long-book",
+            "label": "One subgoal",
+            "outcome": "success",
+            "caption": "“Pick up the book and place it in the back compartment of the caddy.” The policy completes it."
+          },
+          {
+            "src": "/videos/long-dualobj",
+            "label": "Two subgoals",
+            "outcome": "timeout",
+            "caption": "“Put both the alphabet soup and the cream cheese box in the basket.” The first object is placed, the second is never picked up."
+          }
+        ]
+      },
+      {
+        "title": "The two RECAP variants do not agree everywhere",
+        "task": "SPATIAL suite — the same task, two post-training recipes",
+        "body": "Co-training is not uniformly better. On this SPATIAL task the rollout-only policy succeeds where the co-trained one fails — a reminder that the suite averages in the report are averages, and that SPATIAL is the suite most sensitive to guidance.",
+        "clips": [
+          {
+            "src": "/videos/ramekin-cotrain",
+            "label": "Co-trained",
+            "outcome": "failure",
+            "caption": "The same task the rollout-only policy completes."
+          },
+          {
+            "src": "/videos/ramekin-rollout",
+            "label": "Rollout-only",
+            "outcome": "success",
+            "caption": "Reaches, grasps and transports the bowl."
+          }
+        ]
+      }
+    ]
   }
 }
