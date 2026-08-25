@@ -1,0 +1,146 @@
+---
+import Layout from '../../layouts/Layout.astro';
+import PageHeader from '../../components/PageHeader.astro';
+import LinkCards, { type LinkCard } from '../../components/LinkCards.astro';
+import { hosts, n8nPaths, url, repos } from '../../config';
+
+const cards: LinkCard[] = [
+  {
+    href: hosts.turtle,
+    label: 'The live view',
+    body: 'Watch the robot. Read-only at the protocol level — x11vnc runs with -viewonly, so the server never applies pointer or keyboard events no matter what a client sends.',
+    pending: 'Host not configured',
+  },
+  {
+    href: hosts.n8n,
+    label: 'The n8n editor',
+    body: 'Every workflow that drives the rover, on the canvas that runs them. Viewing is behind the n8n owner login.',
+    pending: 'Host not configured',
+  },
+  {
+    href: url(hosts.n8n, n8nPaths.driveForm),
+    label: 'Send the rover somewhere',
+    body: 'A public form with a dropdown of places on the map — lake, tree, house, mountain, dock. Works from a phone.',
+    pending: 'Host not configured',
+  },
+  {
+    href: url(hosts.n8n, n8nPaths.snapshot),
+    label: 'Camera snapshot',
+    body: 'A webhook that captures the robot camera topic and returns it as a JPEG.',
+    pending: 'Host not configured',
+  },
+  {
+    href: url(hosts.n8n, n8nPaths.manual),
+    label: 'The operator manual',
+    body: 'Written from the live ROS graph on request, not from a file. Whatever the robot exposes right now is what it documents.',
+    pending: 'Host not configured',
+  },
+  {
+    href: repos.n8nNodes,
+    label: 'The source',
+    body: 'The n8n node package, the demo compose stack, the rover node and all eleven workflows.',
+  },
+];
+
+const interfaces = {
+  Actions: [
+    ['/rover/navigate_to', 'Drives to one point. Feedback carries distance remaining; cancellable.'],
+    ['/rover/patrol', 'Visits named waypoints in order, feedback per waypoint, optional looping.'],
+  ],
+  Services: [
+    ['/rover/set_led', 'Sets the status LED, which is also the trail colour.'],
+    ['/rover/dock', 'Drives home and starts charging. Preempts a running mission.'],
+    ['/rover/emergency_stop', 'Engages or releases the e-stop.'],
+    ['/rover/reset_demo', 'Full reset: battery, e-stop, trail, back to the centre.'],
+  ],
+  Topics: [
+    ['/rover/status', 'Rover state at 2 Hz. Embeds the battery and the current waypoint.'],
+    ['/rover/battery', 'Charge and charging state at 1 Hz.'],
+    ['/rover/events', 'One JSON message per event — this is what the watchdog triggers on.'],
+    ['/rover/camera/compressed', 'The screen, published as a camera topic at 2 Hz.'],
+  ],
+};
+---
+
+<Layout
+  title="The rover demo — P9 Mars Rover Autonomy"
+  description="A simulated rover offering real ROS 2 topics, services and actions, driven by n8n workflows, with a read-only live view anyone can open."
+>
+  <PageHeader
+    eyebrow="Demo · live · read-only"
+    title="A virtual rover, driven by n8n"
+    lead="A self-contained showcase for the ROS 2 node package: a simulated rover that offers real ROS 2 topics, services and actions, eleven n8n workflows that drive it, and a read-only live view on the public web. Everything the workflows do shows up on screen."
+  />
+
+  <section class="shell pt-8!">
+    <LinkCards cards={cards} />
+  </section>
+
+  <section class="shell pt-16!">
+    <h3 class="rule mb-6">How it fits together</h3>
+    <div class="grid gap-x-[var(--spacing-pad)] gap-y-6 lg:grid-cols-12">
+      <div class="lg:col-span-7">
+        <p class="text-grey-4">
+          The robot is turtlesim wrapped in a rover-shaped interface: a battery that drains while
+          driving, a dock that recharges it, an e-stop, and a map with landmarks drawn on it so a
+          demo can talk about <em>places</em> rather than coordinates. n8n reaches it over a rosbridge
+          WebSocket on the internal Docker network.
+        </p>
+        <p class="text-grey-4">
+          Two things are worth pointing at. The custom message types are discovered at runtime —
+          <code>rover_interfaces</code> is a real ROS 2 interface package with nested messages, and nothing
+          about them is hardcoded in n8n. And every interface documents itself: each one publishes a
+          latched <code>&lt;name&gt;/desc</code> topic saying what it is for, which is how an agent
+          that has never seen this robot can still work out what to call.
+        </p>
+        <p class="mb-0 text-grey-4">
+          Three choices keep it safe to leave on the internet: rosbridge is bound to localhost and
+          never exposed, the live view is read-only at the protocol level rather than by convention,
+          and the workflows that only observe use a credential that is refused at the node level if
+          it tries to publish or call a service.
+        </p>
+      </div>
+
+      <div class="lg:col-span-5">
+        <pre class="m-0 text-[0.72rem] leading-[150%]">{`                  ┌─ n8n editor      (owner login)
+Internet ─ Caddy ─┤
+    (TLS)         └─ live view       (read-only, public)
+
+internal network
+  n8n ──ws──▶ ros2 container
+                ├─ rosbridge + rosapi   (not exposed)
+                ├─ turtlesim on Xvfb
+                ├─ x11vnc -viewonly ─▶ noVNC
+                ├─ rover_node.py
+                └─ camera_node.py`}</pre>
+      </div>
+    </div>
+  </section>
+
+  <section class="shell pt-16!">
+    <h3 class="rule mb-6">What the robot exposes</h3>
+    <div class="grid gap-x-[var(--spacing-pad)] lg:grid-cols-3">
+      {
+        Object.entries(interfaces).map(([group, rows]) => (
+          <div>
+            <p class="eyebrow">{group}</p>
+            <ul class="keyterms keyterms-stacked mb-8!">
+              {rows.map(([name, meaning]) => (
+                <li>
+                  <span class="term">
+                    <code>{name}</code>
+                  </span>
+                  <span class="text-[0.9rem] text-grey-4">{meaning}</span>
+                </li>
+              ))}
+            </ul>
+          </div>
+        ))
+      }
+    </div>
+    <p class="max-w-[70ch] text-[0.85rem] text-grey-3">
+      Embedded live view, the status readout, the workflow gallery and the agent chat land here as
+      the demo hosts come online. Until then the cards above open each one directly.
+    </p>
+  </section>
+</Layout>

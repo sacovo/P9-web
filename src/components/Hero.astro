@@ -1,0 +1,66 @@
+---
+import { hero, site } from '../lib/p9';
+import { report } from '../config';
+
+const facts = [
+  { term: 'Author', value: site.author },
+  { term: 'Advisor', value: site.advisor },
+  { term: 'Institution', value: `FHNW · ${site.school}` },
+];
+---
+
+<section class="shell pt-14! pb-4!">
+  <div class="grid gap-x-[var(--spacing-pad)] gap-y-8 lg:grid-cols-12">
+    <div class="lg:col-span-8">
+      <p class="eyebrow">{hero.eyebrow}</p>
+      <h1>{site.title}</h1>
+      <h2 class="mt-4 max-w-[46ch] text-grey-4">{site.subtitle}</h2>
+      <p class="mt-6 max-w-[60ch] text-[1.05rem]">{hero.lead}</p>
+
+      <div class="mt-8 flex flex-wrap items-center gap-3">
+        {
+          report.pdf && (
+            <a href={report.pdf} class="bare btn">
+              Download the report
+            </a>
+          )
+        }
+        <a href="/demos/rover" class="bare btn btn-ghost">Open the rover demo</a>
+        <a href="/demos/pusht" class="bare btn btn-ghost">Open the PushT demo</a>
+      </div>
+    </div>
+
+    <div class="lg:col-span-4">
+      <ul class="keyterms mb-0!">
+        {
+          facts.map((f) => (
+            <li>
+              <span class="term">{f.term}</span>
+              <span>{f.value}</span>
+            </li>
+          ))
+        }
+        <li>
+          <span class="term">Demos</span>
+          <span>
+            <a href="/demos/rover">Rover &amp; workflows</a>, <a href="/demos/pusht">PushT</a>
+          </span>
+        </li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<section class="shell pt-6!">
+  <figure class="m-0 border border-grey-2">
+    <img
+      src={hero.image}
+      alt={hero.imageAlt}
+      class="responsive block w-full object-cover"
+      width="2400"
+      height="1600"
+      fetchpriority="high"
+      decoding="async"
+    />
+  </figure>
+</section>

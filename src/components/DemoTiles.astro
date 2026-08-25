@@ -1,0 +1,46 @@
+---
+import { demos } from '../lib/p9';
+import { hosts } from '../config';
+
+/** A tile whose backing host is not configured yet says so, rather than
+ *  promising a demo that 404s. */
+const availability: Record<string, boolean> = {
+  rover: Boolean(hosts.turtle || hosts.n8n),
+  pusht: Boolean(hosts.recap),
+};
+---
+
+<section id="demos" class="shell scroll-mt-20 pt-20!">
+  <p class="eyebrow">The part a PDF cannot hold</p>
+  <h3 class="rule mb-8">Two things you can drive</h3>
+
+  <div class="grid gap-[var(--spacing-pad)] lg:grid-cols-2">
+    {
+      demos.map((d) => (
+        <article class="bracket flex flex-col border border-grey-2 bg-grey-1 p-6" data-reveal>
+          <div class="flex items-baseline justify-between gap-4">
+            <p class="eyebrow mb-0!">{d.eyebrow}</p>
+            {!availability[d.id] && (
+              <span class="text-[0.72rem] tracking-[0.08em] text-grey-3 uppercase">
+                Coming online
+              </span>
+            )}
+          </div>
+
+          <h4 class="mt-3 text-[1.35rem] leading-[130%]">{d.title}</h4>
+          <p class="mt-3 text-[0.95rem] text-grey-4">{d.body}</p>
+
+          <ul class="nobullet mb-6! text-[0.9rem] text-grey-4">
+            {d.points.map((p) => (
+              <li>{p}</li>
+            ))}
+          </ul>
+
+          <a href={d.href} class="bare btn mt-auto self-start">
+            Open the demo
+          </a>
+        </article>
+      ))
+    }
+  </div>
+</section>

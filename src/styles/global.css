@@ -1,0 +1,413 @@
+@import 'tailwindcss';
+
+/* =========================================================================
+   P9 — Mars Rover Autonomy — design system
+
+   Two sources, deliberately combined:
+
+   - The FHNW student-project styleguide (web0.fhnw.ch/ht/informatik) is the
+     base. Every token below marked "FHNW" is verbatim from its stylesheets
+     (style.css / font.css / color.css / grid.css), not eyeballed from the
+     rendered manual. Light, flat, black on white, one yellow accent.
+   - The FHNW Rover team site supplies the *structure*: eyebrow kickers,
+     tabular readouts, hairline rules, corner brackets, instrument density.
+
+   Dropped from the rover site on purpose, because this is the formal
+   register: the dark ground, film grain, the footer marquee, GSAP/Lenis
+   smooth scroll, and the serif italic accent. One display face, on h1 only.
+   ========================================================================= */
+
+@theme {
+  /* --- palette (FHNW) -------------------------------------------------- */
+  --color-paper: #fff;
+  --color-ink: #000; /* body text, borders, button fill */
+  --color-yellow: #fde70e; /* the single saturated accent */
+  --color-grey-1: #f1f1ee; /* panel fill, blockquote, hover fill */
+  --color-grey-2: #deded9; /* section rules, footer text */
+  --color-grey-3: #767573; /* secondary text, captions */
+  --color-grey-4: #4c4c4c; /* long-form secondary body copy */
+  --color-overlay: #292929; /* materialbox overlay */
+
+  /* --- type ------------------------------------------------------------ */
+  --font-body: 'Inter', ui-sans-serif, system-ui, sans-serif;
+  --font-display: 'Bricolage Grotesque', 'Inter', ui-sans-serif, sans-serif;
+  --font-mono: 'Courier New', Courier, monospace;
+
+  /* --- breakpoints (FHNW: 601px and 981px, not Tailwind's defaults) ---- */
+  --breakpoint-sm: 480px;
+  --breakpoint-md: 601px;
+  --breakpoint-lg: 981px;
+  --breakpoint-xl: 1280px;
+
+  /* --- layout ---------------------------------------------------------- */
+  --spacing-pad: 20px; /* FHNW --pad: the grid gutter */
+  --container-shell: 1280px; /* FHNW .container max-width */
+
+  --ease-out-expo: cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+/* Element defaults live in @layer base on purpose. Unlayered rules beat every
+   Tailwind layer, so an unlayered `a { color: … }` would win over `.btn` and
+   paint the button's label black on a black fill. */
+@layer base {
+  /* --- base --------------------------------------------------------------- */
+  html {
+    font-size: 100%;
+    scroll-behavior: smooth;
+    -webkit-text-size-adjust: 100%;
+  }
+
+  body {
+    margin: 0;
+    padding: 0;
+    background-color: var(--color-paper);
+    color: var(--color-ink);
+    font-family: var(--font-body);
+    font-size: 1rem;
+    font-weight: 400;
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
+  }
+
+  /* FHNW sets hyphens on flowing text. Kept for p/h2-h5, and kept *off*
+     headings that carry identifiers, which hyphenate badly. */
+  p,
+  h2,
+  h3,
+  h4,
+  h5 {
+    hyphens: auto;
+  }
+
+  p {
+    line-height: 180%; /* FHNW */
+    padding: 0;
+    margin: 0 0 20px;
+  }
+
+  /* --- type scale (FHNW font.css) ----------------------------------------- */
+  h1 {
+    font-family: var(--font-display);
+    font-size: 2rem;
+    font-weight: 600;
+    line-height: 150%;
+    letter-spacing: -0.02em;
+    text-wrap: balance;
+    font-optical-sizing: auto;
+    font-variation-settings: 'opsz' 40;
+    hyphens: manual;
+    margin: 0;
+  }
+
+  h2 {
+    font-size: 1.4rem;
+    font-weight: 400;
+    line-height: 150%;
+    text-wrap: balance;
+    margin: 0 0 5px;
+  }
+
+  h3 {
+    font-size: 1.5rem;
+    font-weight: 600;
+    line-height: 150%;
+    padding: 0;
+    margin: 0 0 5px;
+  }
+
+  h4 {
+    font-size: 1rem;
+    font-weight: 600;
+    line-height: 150%;
+    padding: 0;
+    margin: 0 0 5px;
+  }
+
+  @media only screen and (min-width: 981px) {
+    h1 {
+      font-size: 2.75rem;
+    }
+    h2 {
+      font-size: 1.6rem;
+    }
+  }
+
+  blockquote {
+    font-size: 1.2rem;
+    line-height: 180%;
+    padding: 20px;
+    margin: 50px 0;
+    background-color: var(--color-grey-1);
+  }
+
+  pre {
+    border: 2px dotted #cecdd3;
+    padding: 20px;
+    font-size: 0.95em;
+    color: var(--color-ink);
+    font-family: var(--font-mono);
+    white-space: pre-wrap;
+    overflow-x: auto;
+  }
+
+  code {
+    font-family: var(--font-mono);
+    font-size: 0.92em;
+  }
+
+  hr {
+    border: 0;
+    border-bottom: 1px solid var(--color-ink);
+    margin: 50px 0;
+  }
+
+  /* --- links: black, 3px yellow underline, black on hover (FHNW) ---------- */
+  a,
+  a:visited {
+    color: var(--color-ink);
+    text-decoration: none;
+    border-bottom: 3px solid var(--color-yellow);
+  }
+
+  a:hover {
+    border-bottom-color: var(--color-ink);
+  }
+
+  /* Links that are structural rather than editorial — nav items, whole-card
+     links, buttons, images — opt out of the underline entirely. */
+  a.bare,
+  a.bare:visited,
+  a.bare:hover {
+    border-bottom: none;
+  }
+
+  ::selection {
+    background: var(--color-yellow);
+    color: var(--color-ink);
+  }
+
+  :focus-visible {
+    outline: 2px solid var(--color-ink);
+    outline-offset: 2px;
+  }
+}
+
+@layer components {
+  /* --- FHNW container: 98% → 90% above 981px, capped at 1280 ------------ */
+  .shell {
+    width: 98%;
+    max-width: var(--container-shell);
+    margin: 0 auto;
+    padding: var(--spacing-pad);
+  }
+
+  @media only screen and (min-width: 981px) {
+    .shell {
+      width: 90%;
+    }
+  }
+
+  /* --- the styleguide's signature hover: a hard offset shadow ---------- */
+  .hoverable {
+    transition: 0.3s ease-out;
+    box-shadow: 3px 3px 0 transparent;
+    border: 1px solid transparent;
+  }
+
+  .hoverable:hover {
+    box-shadow: 3px 3px 0 var(--color-ink);
+    border: 1px solid var(--color-ink);
+  }
+
+  /* --- buttons: black fill, uppercase, flips to yellow on hover -------- */
+  .btn {
+    display: inline-block;
+    color: var(--color-paper);
+    background-color: var(--color-ink);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    transition: 0.2s ease-out;
+    cursor: pointer;
+    padding: 0.4rem 1.5rem;
+    line-height: 160%;
+    border: 1px solid var(--color-ink);
+    outline: 0;
+    font-weight: 400;
+    font-size: 0.8rem;
+    font-family: inherit;
+  }
+
+  .btn:hover {
+    background-color: var(--color-yellow);
+    color: var(--color-ink);
+    border-bottom: 1px solid var(--color-ink);
+  }
+
+  .btn-ghost {
+    color: var(--color-ink);
+    background-color: transparent;
+  }
+
+  .btn-ghost:hover {
+    background-color: var(--color-yellow);
+  }
+
+  /* --- section rule (FHNW h2.border / h3.border) ----------------------- */
+  .rule {
+    border-bottom: 3px solid var(--color-grey-2);
+    padding-bottom: 0.4rem;
+  }
+
+  /* --- keyterms: hairline-ruled definition list ------------------------ */
+  /* The styleguide's own pattern, and the right home for interface tables:
+     one ROS topic/service/action per row, name left, meaning right. */
+  .keyterms {
+    border-top: 1px solid var(--color-ink);
+    padding: 0;
+    margin: 0 0 50px;
+    list-style: none;
+  }
+
+  .keyterms > li {
+    border-bottom: 1px solid var(--color-ink);
+    line-height: 180%;
+    display: table;
+    width: 100%;
+    padding: 5px 0;
+  }
+
+  .keyterms > li > .term {
+    display: block;
+    font-weight: 600;
+  }
+
+  @media screen and (min-width: 601px) {
+    .keyterms > li > .term {
+      width: 220px;
+      display: table-cell;
+      vertical-align: top;
+      padding-right: 20px;
+    }
+  }
+
+  /* Two columns need a wide container. Inside a three-up grid the 220px term
+     cell leaves the meaning ragged, so this variant keeps the hairline rules
+     and stacks the pair instead. */
+  .keyterms-stacked > li,
+  .keyterms-stacked > li > .term {
+    display: block;
+    width: auto;
+  }
+
+  .keyterms-stacked > li > .term {
+    padding-right: 0;
+  }
+
+  /* --- dashed list (FHNW ul.nobullet) ---------------------------------- */
+  .nobullet {
+    padding: 0 0 0 20px;
+    margin: 0 0 20px;
+    list-style: none;
+  }
+
+  .nobullet > li {
+    line-height: 180%;
+  }
+
+  .nobullet > li::before {
+    content: '– ';
+    display: inline-block;
+    width: 20px;
+    margin: 0 0 0 -20px;
+  }
+
+  /* --- editorial kicker, from the rover site ---------------------------- */
+  .eyebrow {
+    font-size: 0.72rem;
+    font-weight: 500;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: var(--color-grey-3);
+    margin: 0 0 0.75rem;
+  }
+
+  /* --- numeric readout, tabular figures so columns line up ------------- */
+  .readout {
+    font-weight: 500;
+    font-variant-numeric: tabular-nums;
+    letter-spacing: 0.01em;
+  }
+
+  /* --- corner brackets: the rover site's instrument frame, in black ---- */
+  .bracket {
+    position: relative;
+  }
+
+  .bracket::before,
+  .bracket::after {
+    content: '';
+    position: absolute;
+    width: 14px;
+    height: 14px;
+    border-color: var(--color-ink);
+    border-style: solid;
+    pointer-events: none;
+  }
+
+  .bracket::before {
+    top: -1px;
+    left: -1px;
+    border-width: 1px 0 0 1px;
+  }
+
+  .bracket::after {
+    bottom: -1px;
+    right: -1px;
+    border-width: 0 1px 1px 0;
+  }
+
+  /* --- responsive media (FHNW) ----------------------------------------- */
+  .responsive {
+    max-width: 100%;
+    height: auto;
+  }
+}
+
+/* --- scroll reveal ------------------------------------------------------ */
+[data-reveal] {
+  opacity: 0;
+  transform: translateY(14px);
+  transition:
+    opacity 0.7s var(--ease-out-expo),
+    transform 0.7s var(--ease-out-expo);
+}
+
+[data-reveal].is-visible {
+  opacity: 1;
+  transform: none;
+}
+
+/* Printing never runs the observer, so reveal-on-scroll would print blank. */
+@media print {
+  [data-reveal] {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+  }
+  [data-reveal] {
+    opacity: 1;
+    transform: none;
+  }
+}

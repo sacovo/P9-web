@@ -1,0 +1,35 @@
+---
+import { contributions } from '../lib/p9';
+---
+
+<section id="contributions" class="shell scroll-mt-20 pt-20!">
+  <h3 class="rule mb-8">Contributions</h3>
+
+  <ol class="m-0 grid list-none gap-[var(--spacing-pad)] p-0 md:grid-cols-2 lg:grid-cols-3">
+    {
+      contributions.map((c) => (
+        <li class="hoverable flex flex-col border! border-grey-2! bg-paper p-5" data-reveal>
+          <p class="readout eyebrow mb-2! text-ink!">{c.n}</p>
+          <h4 class="text-[1.05rem] leading-[140%]">{c.title}</h4>
+          <p class="mt-2 mb-4 text-[0.95rem] text-grey-4">{c.body}</p>
+
+          <div class="mt-auto border-t border-grey-2 pt-3">
+            <p class="readout m-0 text-[1.6rem] leading-none">{c.metric.value}</p>
+            <p class="m-0 mt-1 text-[0.85rem] font-medium">{c.metric.label}</p>
+            <p class="m-0 mt-1 text-[0.78rem] leading-[150%] text-grey-3">{c.metric.note}</p>
+          </div>
+
+          <p class="m-0 mt-3 text-[0.72rem] tracking-[0.08em] text-grey-3 uppercase">
+            {c.question}
+          </p>
+        </li>
+      ))
+    }
+  </ol>
+
+  <p class="mt-6 max-w-[70ch] text-[0.85rem] text-grey-3">
+    The LIBERO figures above are benchmark results. Where a number was measured on the rover
+    manipulator itself the report says so explicitly, and where arm time ran out it says that
+    too — see the evaluation chapter rather than reading these tiles as rover success rates.
+  </p>
+</section>

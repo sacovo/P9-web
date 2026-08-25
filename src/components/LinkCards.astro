@@ -1,0 +1,39 @@
+---
+import type { Maybe } from '../config';
+
+export interface LinkCard {
+  href: Maybe<string>;
+  label: string;
+  body: string;
+  /** Shown instead of the link when `href` is null. */
+  pending?: string;
+}
+
+interface Props {
+  cards: LinkCard[];
+}
+
+const { cards } = Astro.props;
+---
+
+<ul class="m-0 grid list-none gap-[var(--spacing-pad)] p-0 md:grid-cols-2 lg:grid-cols-3">
+  {
+    cards.map((c) => (
+      <li class="hoverable border! border-grey-2! bg-paper p-5" data-reveal>
+        <h4 class="text-[1rem]">
+          {c.href ? (
+            <a href={c.href} rel="noopener">
+              {c.label}
+            </a>
+          ) : (
+            <span class="text-grey-3">{c.label}</span>
+          )}
+        </h4>
+        <p class="mt-2 mb-0 text-[0.9rem] text-grey-4">{c.body}</p>
+        {!c.href && c.pending && (
+          <p class="m-0 mt-2 text-[0.75rem] tracking-[0.06em] text-grey-3 uppercase">{c.pending}</p>
+        )}
+      </li>
+    ))
+  }
+</ul>

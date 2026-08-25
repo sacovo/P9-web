@@ -1,0 +1,44 @@
+---
+/**
+ * The FHNW styleguide's header is a solid yellow band carrying the school
+ * logo (`header { background: #fde70e }`). Kept literally, because it is the
+ * single most recognisable thing about an FHNW student-project page.
+ */
+import { site } from '../lib/p9';
+
+const links = [
+  { href: '/#overview', label: 'Overview' },
+  { href: '/#contributions', label: 'Contributions' },
+  { href: '/demos/rover', label: 'Rover demo' },
+  { href: '/demos/pusht', label: 'PushT demo' },
+  { href: '/#figures', label: 'Figures' },
+];
+---
+
+<header class="bg-yellow">
+  <div class="shell flex flex-wrap items-center gap-x-8 gap-y-3 py-3!">
+    <a href="/" class="bare flex shrink-0 items-center gap-3">
+      <img
+        src="/images/fhnw-hsi.png"
+        alt="Hochschule für Informatik FHNW"
+        width="200"
+        height="31"
+        class="h-[26px] w-auto"
+      />
+      <span class="sr-only">{site.title}</span>
+    </a>
+
+    <nav aria-label="Main" class="flex flex-wrap items-center gap-x-5 gap-y-1 lg:ml-auto">
+      {
+        links.map((l) => (
+          <a
+            href={l.href}
+            class="bare border-b-2 border-transparent text-[0.85rem] font-medium hover:border-ink"
+          >
+            {l.label}
+          </a>
+        ))
+      }
+    </nav>
+  </div>
+</header>

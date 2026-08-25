@@ -1,0 +1,82 @@
+---
+import Layout from '../../layouts/Layout.astro';
+import PageHeader from '../../components/PageHeader.astro';
+import LinkCards, { type LinkCard } from '../../components/LinkCards.astro';
+import { hosts, repos } from '../../config';
+
+const cards: LinkCard[] = [
+  {
+    href: hosts.recap,
+    label: 'Open the demo',
+    body: 'Runs entirely in your browser. Needs WebGPU, and the real policy downloads its ONNX weights on demand — the stub policies need nothing.',
+    pending: 'Not deployed yet',
+  },
+  {
+    href: repos.pushtDemo,
+    label: 'The source',
+    body: 'The demo app, the PushT finetune, the ONNX export, and the parity harnesses that check the browser against Python.',
+    pending: 'No public remote yet',
+  },
+  {
+    href: repos.smolvlaRl,
+    label: 'The policy',
+    body: 'SmolVLA with RECAP-style advantage conditioning and classifier-free guidance — the model code behind contribution 01.',
+  },
+];
+---
+
+<Layout
+  title="The PushT demo — P9 Mars Rover Autonomy"
+  description="SmolVLA with advantage conditioning and classifier-free guidance, solving PushT client-side: Chipmunk2D physics as WASM, inference on WebGPU."
+>
+  <PageHeader
+    eyebrow="Demo · runs in your browser"
+    title="SmolVLA + RECAP + guidance, client-side"
+    lead="The policy family from contribution 01, solving PushT with no backend at all: Chipmunk2D physics compiled to WASM, policy inference on WebGPU through onnxruntime-web. Watch it push the T onto the goal, drag the agent away and let the policy recover, and move the guidance weight to see what it changes."
+  />
+
+  <section class="shell pt-8!">
+    <LinkCards cards={cards} />
+  </section>
+
+  <section class="shell pt-16!">
+    <h3 class="rule mb-6">What you are looking at</h3>
+    <div class="grid gap-x-[var(--spacing-pad)] gap-y-6 lg:grid-cols-12">
+      <div class="lg:col-span-7">
+        <p class="text-grey-4">
+          A PD-controlled agent pushes a rigid T onto a target pose. The policy sees only a 96×96
+          image and its own position, and its action <em>is</em> a target position — sixteen of them
+          per chunk. That last detail is what makes the demo legible: because an action is a
+          position, a sampled action chunk can be drawn straight onto the arena as a trajectory. The
+          fan you see is sixteen independent draws from the flow-matching policy, all conditioned on
+          one frozen observation.
+        </p>
+        <p class="mb-0 text-grey-4">
+          Dragging inside the arena is therefore a valid action, not a special case — take over
+          mid-episode, put the agent somewhere awkward, release, and watch the policy resume from a
+          state it never saw in training.
+        </p>
+      </div>
+
+      <div class="lg:col-span-5">
+        <p class="eyebrow">Worth being precise about</p>
+        <p class="text-[0.95rem] text-grey-4">
+          Raising the guidance weight measurably changes what the policy <em>achieves</em>. It does
+          not visibly narrow the fan — the spread of sampled headings is the same at high guidance
+          as at zero. The intuition that guidance collapses a distribution comes from
+          language-conditioned image models and does not carry over to a single advantage token.
+        </p>
+        <p class="mb-0 text-[0.85rem] text-grey-3">
+          The measured numbers are printed next to the demo itself, generated from the same
+          evaluation run that produced its starting states rather than copied by hand.
+        </p>
+      </div>
+    </div>
+
+    <p class="mt-10 max-w-[70ch] text-[0.85rem] text-grey-3">
+      The demo is embedded on this page once it is deployed. It stays a separate build on its own
+      URL so it can be opened standalone, and so a page of thesis prose never has to ship alongside
+      half a gigabyte of model weights.
+    </p>
+  </section>
+</Layout>

@@ -1,0 +1,156 @@
+{
+  "site": {
+    "title": "P9 — Mars Rover Autonomy",
+    "subtitle": "Autonomous manipulation and workflow automation for the FHNW Mars Rover",
+    "author": "Sandro Covo",
+    "advisor": "Prof. Dr. Christoph Stamm",
+    "institution": "FHNW University of Applied Sciences and Arts Northwestern Switzerland",
+    "school": "School of Engineering",
+    "description": "Companion site to the FHNW master's thesis P9 — Mars Rover Autonomy: a SmolVLA policy post-trained with RECAP, n8n workflow automation over ROS 2, and TensorRT deployment on the Jetson Orin. With two demos you can drive yourself."
+  },
+
+  "hero": {
+    "eyebrow": "FHNW · School of Engineering · Master's thesis",
+    "lead": "A vision-language-action policy, the workflow layer that orchestrates it, and the safety gating underneath — on a student-built Mars rover.",
+    "image": "/images/rover.webp",
+    "imageAlt": "The FHNW Mars Rover with its six-degree-of-freedom manipulator"
+  },
+
+  "overview": {
+    "eyebrow": "What this is",
+    "heading": "Six directions, one manipulator",
+    "body": [
+      "This thesis extends the autonomy of the FHNW Mars Rover along six directions, centred on a language-conditioned manipulation policy and the software needed to train it, deploy it on board, and orchestrate it. The per-task models of the previous project are replaced by a single SmolVLA policy conditioned on a natural-language task description, post-trained with RECAP — an advantage-conditioned reinforcement-learning recipe — and compiled to TensorRT so it holds the control-cycle budget on the rover's Jetson Orin.",
+      "Around the policy sits a workflow layer: the open-source automation tool n8n, bridged to ROS 2 topics, services and actions, so an operator composes task sequences without writing code and an LLM agent can answer diagnostic questions by calling the same tools. Underneath it, a classical visual-servoing approach phase handles what language cannot disambiguate, and every autonomous controller actuates only behind an operator heartbeat and a latching software e-stop.",
+      "The report covers all of this in detail. This page is for the parts a PDF cannot hold: a rover you can send somewhere, workflows you can open, and a policy you can argue with."
+    ]
+  },
+
+  "contributions": [
+    {
+      "n": "01",
+      "title": "Vision-language-action policies with reinforcement learning",
+      "body": "A single SmolVLA policy conditioned on a natural-language task description replaces the per-task models of the previous project, then is post-trained with RECAP, an advantage-conditioned RL recipe.",
+      "metric": { "value": "68.1 %", "label": "LIBERO success, RECAP", "note": "base SmolVLA 62.9 %, plain baseline 55.3 %" },
+      "question": "RQ1 · task automation and reinforcement learning"
+    },
+    {
+      "n": "02",
+      "title": "Workflow automation and agentic control",
+      "body": "n8n is integrated with ROS 2 over rosbridge, giving operators a no-code way to compose task sequences from topics, services and actions. An LLM agent calls the same tools to answer free-text diagnostic questions.",
+      "metric": { "value": "Qwen3.5-0.8B", "label": "finetuned to run on board", "note": "trained on the agent's own recorded executions" },
+      "question": "RQ1 · task automation, RQ3 · safe handling of plan changes"
+    },
+    {
+      "n": "03",
+      "title": "Real-time deployment on the Jetson Orin",
+      "body": "The policy is compiled to TensorRT, split into a VLM prefix and a flow-matching action expert. The prefix stays FP32 — converting the whole graph to FP16 collapses the policy's actions and is rejected by the numerical acceptance check.",
+      "metric": { "value": "325 ms", "label": "per chunk, ≈3 Hz replanning", "note": "428 ms with the full ten-step sampler; 2.6× over the uncompiled baseline" },
+      "question": "RQ1 · enabling work"
+    },
+    {
+      "n": "04",
+      "title": "Depth sensing",
+      "body": "The time-of-flight grid in the gripper is routed into the policy's state input as an additional observation, through one configuration entry and with the policy itself unchanged. It buys a near-field measurement where no markers are available.",
+      "metric": { "value": "8 × 8", "label": "in-gripper ToF grid", "note": "state input, not a positioning method of its own" },
+      "question": "RQ2 · marker-free depth-based control"
+    },
+    {
+      "n": "05",
+      "title": "Visual servoing",
+      "body": "\"The third switch from the left\" is five identical objects and a counting problem. Language does not disambiguate that, so the classical approach phase stays — reimplemented in C++ to hold its rate on board, and characterised end to end against the maintenance panel.",
+      "metric": { "value": "25 mm", "label": "tolerance, occluded target", "note": "two defects fixed: fiducial pose ambiguity and a zeroed tool-axis offset" },
+      "question": "RQ2 · precise positioning"
+    },
+    {
+      "n": "06",
+      "title": "Manipulator control and safety gating",
+      "body": "Per-joint weighting is added to the Cartesian solver, controlling how much each axis contributes to a motion. Every autonomous controller, learned or classical, actuates only behind an operator heartbeat and a latching software e-stop.",
+      "metric": { "value": "4 layers", "label": "of stopping", "note": "hardware stop, latching software e-stop, heartbeat, cancellable phase actions" },
+      "question": "RQ3 · safe handling of errors and interruption"
+    }
+  ],
+
+  "demos": [
+    {
+      "id": "rover",
+      "href": "/demos/rover",
+      "eyebrow": "Live · read-only",
+      "title": "A virtual rover, driven by n8n",
+      "body": "A simulated rover offering real ROS 2 topics, services and actions, driven by eleven n8n workflows — and a read-only live view anyone can open. Send it to the lake from your phone, watch the battery watchdog preempt a patrol, or ask the agent what interfaces the robot has.",
+      "points": [
+        "Live view of the robot, read-only at the protocol level",
+        "All eleven workflows on a real n8n canvas",
+        "The n8n editor, the drive form, and the agent chat"
+      ]
+    },
+    {
+      "id": "pusht",
+      "href": "/demos/pusht",
+      "eyebrow": "Runs in your browser",
+      "title": "SmolVLA + RECAP + guidance, client-side",
+      "body": "The policy family from contribution 01, solving PushT entirely in the browser: Chipmunk2D physics as WASM, inference on WebGPU. Drag the agent away and watch the policy recover; move the guidance weight and watch what it does — and does not — change.",
+      "points": [
+        "Take over from the policy mid-episode",
+        "Sampled action chunks drawn on the arena",
+        "Guidance weight and the denoising steps, both scrubable"
+      ]
+    }
+  ],
+
+  "figures": {
+    "eyebrow": "From the report",
+    "heading": "Selected figures",
+    "note": "A handful of figures that read well on a screen. The report has the rest, with the argument around them.",
+    "items": [
+      {
+        "src": "/images/figures/n8n_drill.webp",
+        "alt": "The deep-sampling workflow on the n8n canvas",
+        "caption": "The deep-sampling workflow on the n8n canvas: the form trigger and the operator's container and mode selection on the left, then five phases — set parameters, drill, unload, tare, weigh. The branch at the bottom exposes the individual drill commands to the operator.",
+        "wide": true
+      },
+      {
+        "src": "/images/figures/toolchanger_workflow.webp",
+        "alt": "The tool-change workflow on the n8n canvas",
+        "caption": "The tool-change workflow. Joint state is read once on the left and replayed on the right, so the arm returns to the pose it started from. Labelled in German, as the team built it.",
+        "wide": true
+      },
+      {
+        "src": "/images/figures/n8n_ros2_agent.webp",
+        "alt": "The ROS 2 agent workflow in n8n",
+        "caption": "The agent: plain tools, so it fills in every ROS name, type and payload itself. Nothing about the robot is hardcoded in the workflow.",
+        "wide": false
+      },
+      {
+        "src": "/images/figures/n8n_nodes_palette.webp",
+        "alt": "The ROS 2 node palette in n8n",
+        "caption": "The node palette: topics, services, actions and the rosapi discovery node, all usable as agent tools.",
+        "wide": false
+      },
+      {
+        "src": "/images/figures/agent_vision_cloud.webp",
+        "alt": "Cloud model answering a vision question about the rover",
+        "caption": "The cloud model's answer to a vision question…",
+        "wide": false
+      },
+      {
+        "src": "/images/figures/agent_vision_finetuned.webp",
+        "alt": "Finetuned on-board model answering the same vision question",
+        "caption": "…and the finetuned on-board model's answer to the same one.",
+        "wide": false
+      },
+      {
+        "src": "/images/figures/gripper_markers.webp",
+        "alt": "The gripper with its ArUco markers",
+        "caption": "The gripper carrying the fiducials the approach phase localises it by.",
+        "wide": false
+      },
+      {
+        "src": "/images/figures/maintenance_panel.webp",
+        "alt": "The maintenance panel replica",
+        "caption": "The maintenance-panel replica the servoing accuracy is characterised against — five identical switches, 25 mm of tolerance.",
+        "wide": false
+      }
+    ]
+  }
+}

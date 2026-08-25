@@ -1,0 +1,63 @@
+---
+import { site } from '../lib/p9';
+import { repos, report } from '../config';
+
+const year = 2026;
+
+const codeLinks = [
+  { href: repos.n8nNodes, label: 'n8n ROS 2 nodes' },
+  { href: repos.autonomy, label: 'Rover autonomy stack' },
+  { href: repos.smolvlaRl, label: 'SmolVLA + RECAP' },
+  { href: repos.agentFinetune, label: 'Agent finetune' },
+  { href: repos.rosbridge, label: 'rosbridge deployment' },
+  { href: repos.thesisSource, label: 'Thesis source' },
+].filter((l) => l.href);
+---
+
+<footer class="mt-24 bg-ink text-grey-2">
+  <div class="shell grid gap-10 py-14! lg:grid-cols-12">
+    <div class="lg:col-span-5">
+      <h3 class="text-grey-2">{site.title}</h3>
+      <p class="mt-2 mb-0 text-[0.95rem] leading-[180%]">{site.subtitle}</p>
+    </div>
+
+    <div class="lg:col-span-4">
+      <p class="eyebrow text-grey-3!">Code</p>
+      <ul class="m-0 grid list-none gap-1 p-0 text-[0.9rem]">
+        {
+          codeLinks.map((l) => (
+            <li>
+              <a href={l.href} class="text-grey-2! hover:border-paper!">
+                {l.label}
+              </a>
+            </li>
+          ))
+        }
+      </ul>
+    </div>
+
+    <div class="lg:col-span-3">
+      <p class="eyebrow text-grey-3!">Thesis</p>
+      <ul class="m-0 grid list-none gap-1 p-0 text-[0.9rem]">
+        <li>{site.author}</li>
+        <li class="text-grey-3">Advisor: {site.advisor}</li>
+        <li class="text-grey-3">{site.school}</li>
+        {
+          report.pdf && (
+            <li class="mt-2">
+              <a href={report.pdf} class="text-grey-2! hover:border-paper!">
+                Download the report (PDF)
+              </a>
+            </li>
+          )
+        }
+      </ul>
+    </div>
+  </div>
+
+  <div class="shell border-t border-grey-3/40 py-5!">
+    <p class="m-0 text-[0.8rem] text-grey-3">
+      © {year} {site.author} · {site.institution}
+    </p>
+  </div>
+</footer>
