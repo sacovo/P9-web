@@ -1,9 +1,11 @@
 # Compose override applied ONLY on this server, so the rover demo repository
 # needs no change and still runs standalone exactly as its README says.
 #
-# It does two things: attaches n8n and ros2 to the edge network so the P9 Caddy
-# can reach them by service name, and drops the demo's own published ports so
-# nothing but the edge is exposed.
+# It does three things: pins n8n to the prebuilt amd64 image so this box never
+# compiles n8n (2 vCPU / 3 GB — the source build takes half an hour on a
+# GitHub runner with four times the cores), attaches n8n and ros2 to the edge
+# network so the P9 Caddy can reach them by service name, and drops the demo's
+# own published ports so nothing but the edge is exposed.
 #
 #   cd ~/p9/n8n-nodes-ros2/demo
 #   docker compose -p roverdemo \
@@ -16,6 +18,11 @@
 
 services:
   n8n:
+    # Built by .github/workflows/docker-amd64.yml in the node package repo.
+    # `!reset` drops the build section entirely, so compose pulls rather than
+    # falling back to building when the image is missing locally.
+    image: ${N8N_DEMO_IMAGE:-ghcr.io/sacovo/n8n-nodes-ros2:n8n-amd64}
+    build: !reset null
     networks:
       - default
       - edge
