@@ -1,0 +1,104 @@
+---
+import { hosts, n8nPaths, url } from '../config';
+
+/**
+ * The two things a visitor can actually do to the robot.
+ *
+ * Both are n8n's own hosted pages, framed. n8n sends no X-Frame-Options on
+ * these routes, so no header relaxation was needed — and deliberately none was
+ * added, since the editor on the same host must stay un-framable.
+ *
+ * The chat is behind a click. The trigger is public and every message spends
+ * model tokens, so it must not start because someone scrolled past it or left
+ * a tab open. The form has no such cost and loads with the page.
+ */
+const form = url(hosts.n8n, n8nPaths.driveForm);
+const chat = url(hosts.n8n, n8nPaths.chat);
+---
+
+{
+  (form || chat) && (
+    <section id="drive" class="shell scroll-mt-20 pt-16!">
+      <p class="eyebrow">Your turn</p>
+      <h3 class="rule mb-3">Drive it, or ask it something</h3>
+      <p class="mb-8 max-w-[72ch] text-grey-4">
+        Both of these command the same robot you are watching above. Send it somewhere and the
+        landmark tour is preempted; the trail it draws is the evidence.
+      </p>
+
+      <div class="grid gap-[var(--spacing-pad)] lg:grid-cols-2">
+        {form && (
+          <div>
+            <div class="flex items-baseline justify-between gap-3">
+              <h4 class="text-[1rem]">Send the rover to a place</h4>
+              <a href={form} class="text-[0.78rem]" rel="noopener">
+                open full
+              </a>
+            </div>
+            <p class="mt-2 mb-3 text-[0.85rem] text-grey-3">
+              Workflow 03. The dropdown is built from <code>/rover/landmarks</code>, a latched
+              topic, so the places come from the robot rather than from the form.
+            </p>
+            <div class="border border-grey-2 bg-grey-1">
+              <iframe
+                src={form}
+                title="Form to send the rover to a landmark"
+                class="block h-[560px] w-full border-0"
+                loading="lazy"
+              />
+            </div>
+          </div>
+        )}
+
+        {chat && (
+          <div>
+            <div class="flex items-baseline justify-between gap-3">
+              <h4 class="text-[1rem]">Ask the rover</h4>
+              <a href={chat} class="text-[0.78rem]" rel="noopener">
+                open full
+              </a>
+            </div>
+            <p class="mt-2 mb-3 text-[0.85rem] text-grey-3">
+              Workflow 07. The agent is given plain tools and fills in every ROS name, type and
+              payload itself, so nothing about this robot is hardcoded in the workflow. Try
+              <em>“what interfaces does the rover have, and send it to the tree”</em>.
+            </p>
+
+            <div
+              id="chat-shell"
+              class="flex h-[560px] items-center justify-center border border-grey-2 bg-grey-1 p-6"
+            >
+              <div class="max-w-[42ch] text-center">
+                <p class="text-[0.88rem] text-grey-4">
+                  The chat is public and every message spends model tokens, so it starts only when
+                  you ask it to.
+                </p>
+                <button type="button" id="chat-start" class="btn">
+                  Start the chat
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+      </div>
+    </section>
+  )
+}
+
+{
+  chat && (
+    <script define:vars={{ chatUrl: chat }}>
+      const shell = document.getElementById('chat-shell');
+      const start = document.getElementById('chat-start');
+
+      start?.addEventListener('click', () => {
+        const frame = document.createElement('iframe');
+        frame.src = chatUrl;
+        frame.title = 'Chat with the rover agent';
+        frame.className = 'block h-full w-full border-0';
+        shell.replaceChildren(frame);
+        shell.classList.remove('items-center', 'justify-center', 'p-6');
+      });
+    </script>
+  )
+}

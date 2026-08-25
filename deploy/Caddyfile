@@ -35,6 +35,23 @@
 # ---------------------------------------------------------------------------
 {$N8N_LABEL}.{$BASE_DOMAIN} {
 	encode zstd gzip
+
+	header {
+		X-Content-Type-Options nosniff
+
+		# n8n sends no X-Frame-Options of its own here: NODE_ENV is unset in
+		# that container, so it believes it is in development and helmet
+		# disables the header. Without this the editor is framable by any
+		# origin, which is clickjacking against a logged-in owner who has the
+		# Code node. Setting it at the edge fixes that regardless of what the
+		# app decides, and still admits the thesis site, which embeds the
+		# public form and the agent chat from these same paths.
+		#
+		# n8n's own CSP on /form/* (a `sandbox` directive) is left alone —
+		# two CSP headers are enforced independently, so both hold.
+		Content-Security-Policy "frame-ancestors 'self' https://{$SITE_LABEL}.{$BASE_DOMAIN}"
+	}
+
 	reverse_proxy n8n:5678 {
 		flush_interval -1
 	}

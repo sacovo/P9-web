@@ -1,0 +1,109 @@
+---
+import workflowData from '../../content/workflows.json';
+import { workflowCanvasSrc, hosts } from '../config';
+
+/**
+ * The eleven demo workflows, each on a real n8n canvas rather than as a
+ * screenshot.
+ *
+ * `<n8n-demo>` renders into an iframe pointing at an n8n frontend's
+ * /workflows/demo route and postMessages the export in. That route needs
+ * N8N_PREVIEW_MODE, which is why it points at the dedicated renderer rather
+ * than the editor: on the editor that flag would also disable X-Frame-Options
+ * instance-wide and skip the owner-setup redirect, on the one instance holding
+ * the credentials that drive the robot.
+ *
+ * `clicktointeract` is what makes a page of eleven canvases usable — without
+ * it each canvas swallows the page scroll as soon as the pointer crosses it.
+ * `frame` adds the JSON with a copy button, so a visitor can import any of
+ * these into their own n8n.
+ */
+const { workflows } = workflowData;
+const src = workflowCanvasSrc();
+---
+
+<section id="workflows" class="shell scroll-mt-20 pt-16!">
+  <p class="eyebrow">Eleven workflows</p>
+  <h3 class="rule mb-3">The canvases that drive it</h3>
+  <p class="mb-10 max-w-[72ch] text-grey-4">
+    These are the running workflows, on a real n8n canvas — pan and zoom them, open a node to see
+    its parameters, or copy the JSON and import it into your own n8n. Click a canvas once before
+    it takes the scroll wheel.
+    {
+      hosts.n8n && (
+        <>
+          {' '}
+          The same workflows are <a href={hosts.n8n} rel="noopener">live in the editor</a>, behind
+          the owner login.
+        </>
+      )
+    }
+  </p>
+
+  <div class="grid gap-12">
+    {
+      workflows.map((w) => (
+        <article data-reveal>
+          <div class="grid gap-x-[var(--spacing-pad)] gap-y-3 lg:grid-cols-12">
+            <div class="lg:col-span-3">
+              <p class="readout eyebrow mb-1! text-ink!">{w.number}</p>
+              <h4 class="text-[1.05rem] leading-[140%]">{w.title}</h4>
+              <p class="mt-2 mb-3 text-[0.9rem] text-grey-4">{w.shows}</p>
+
+              <p class="m-0 text-[0.72rem] tracking-[0.06em] text-grey-3 uppercase">
+                {w.nodeCount} nodes
+                {w.inactive && ' · inactive'}
+              </p>
+
+              {w.rosNodes.length > 0 && (
+                <ul class="mt-3 mb-0 flex list-none flex-wrap gap-1 p-0">
+                  {w.rosNodes.map((n) => (
+                    <li class="border border-grey-2 px-1.5 py-0.5 font-mono text-[0.7rem] text-grey-4">
+                      {n}
+                    </li>
+                  ))}
+                </ul>
+              )}
+
+              {w.inactive && (
+                <p class="mt-3 mb-0 border-l-2 border-yellow bg-grey-1 p-3 text-[0.78rem] leading-[160%] text-grey-4">
+                  {w.inactive}
+                </p>
+              )}
+            </div>
+
+            <div class="min-w-0 lg:col-span-9">
+              <div class="border border-grey-2 bg-grey-1">
+                <n8n-demo
+                  workflow={w.workflow}
+                  src={src}
+                  theme="light"
+                  frame="true"
+                  clicktointeract="true"
+                  collapseformobile="true"
+                  hidecanvaserrors="true"
+                />
+              </div>
+            </div>
+          </div>
+        </article>
+      ))
+    }
+  </div>
+</section>
+
+<script>
+  // Registers the <n8n-demo> custom element. Imported here rather than in the
+  // frontmatter so it is bundled and loaded on the client, where Lit needs it.
+  import '@n8n_io/n8n-demo-component';
+</script>
+
+<style>
+  /* The component is a Lit element with a shadow root, so the page's styles
+     neither leak in nor apply. All that is settable from out here is the box
+     it occupies; `theme="light"` handles the inside. */
+  n8n-demo {
+    display: block;
+    min-height: 420px;
+  }
+</style>

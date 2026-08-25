@@ -42,8 +42,14 @@ services:
   # Renders workflow canvases for <n8n-demo> and nothing else. No credentials,
   # no imported workflows, a throwaway database. N8N_PREVIEW_MODE is safe here
   # precisely because there is nothing on this instance worth reaching.
+  #
+  # It runs the demo's own image rather than stock n8n: a canvas can only draw
+  # a node whose type it knows, and stock n8n has never heard of
+  # @fhnw-rover/n8n-nodes-ros2 — every ROS node came out as "?" with "detailed
+  # node info is not available". Same image as the editor, minus everything
+  # that makes the editor worth attacking.
   n8n-preview:
-    image: ${N8N_PREVIEW_IMAGE:-docker.io/n8nio/n8n:latest}
+    image: ${N8N_PREVIEW_IMAGE:-ghcr.io/sacovo/n8n-nodes-ros2:n8n-amd64}
     restart: unless-stopped
     environment:
       N8N_PREVIEW_MODE: 'true'
@@ -54,16 +60,21 @@ services:
       N8N_DIAGNOSTICS_ENABLED: 'false'
       N8N_VERSION_NOTIFICATIONS_ENABLED: 'false'
       N8N_RUNNERS_ENABLED: 'false'
+      # The demo image's entrypoint installs the node package under this folder.
+      N8N_USER_FOLDER: /data
+      SKIP_NODE_REINSTALL: '1'
       # Deliberately no N8N_ENCRYPTION_KEY: this instance stores no credentials.
-    tmpfs:
-      # The database is disposable, so keep it in RAM and let a restart wipe it.
-      - /home/node/.n8n:size=64m,uid=1000,gid=1000
+    volumes:
+      # Holds only the node package and a throwaway SQLite file. Nothing here
+      # is worth preserving; delete the volume to rebuild it from the image.
+      - n8n_preview_data:/data
     networks:
       - edge
 
 volumes:
   caddy_data:
   caddy_config:
+  n8n_preview_data:
 
 networks:
   edge:

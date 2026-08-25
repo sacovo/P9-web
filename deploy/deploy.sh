@@ -36,7 +36,12 @@ ssh "$SERVER" "mkdir -p $REMOTE_DIR/deploy/site $REMOTE_DIR/deploy/recap"
 # --delete so removed pages actually disappear; the PDF is large but rsync
 # only ships it when it changes.
 rsync -az --delete dist/ "$SERVER:$REMOTE_DIR/deploy/site/"
-rsync -az deploy/Caddyfile deploy/docker-compose.yml deploy/roverdemo.override.yml \
+# --inplace matters: these are bind-mounted into containers as single files,
+# and Docker binds them by inode. Without it rsync writes a new file and
+# renames it over the old one, so the container goes on serving the inode it
+# started with and the edit silently does nothing.
+rsync -az --inplace deploy/Caddyfile deploy/docker-compose.yml \
+  deploy/roverdemo.override.yml deploy/roverdemo.setup.yml \
   "$SERVER:$REMOTE_DIR/deploy/"
 
 echo "==> Reloading the edge"

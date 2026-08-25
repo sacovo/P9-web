@@ -2,6 +2,9 @@
 import Layout from '../../layouts/Layout.astro';
 import PageHeader from '../../components/PageHeader.astro';
 import LinkCards, { type LinkCard } from '../../components/LinkCards.astro';
+import LiveRover from '../../components/LiveRover.astro';
+import DriveAndChat from '../../components/DriveAndChat.astro';
+import WorkflowGallery from '../../components/WorkflowGallery.astro';
 import { hosts, n8nPaths, url, repos } from '../../config';
 
 const cards: LinkCard[] = [
@@ -72,7 +75,11 @@ const interfaces = {
     lead="A self-contained showcase for the ROS 2 node package: a simulated rover that offers real ROS 2 topics, services and actions, eleven n8n workflows that drive it, and a read-only live view on the public web. Everything the workflows do shows up on screen."
   />
 
-  <section class="shell pt-8!">
+  <LiveRover />
+  <DriveAndChat />
+
+  <section class="shell pt-14!">
+    <h3 class="rule mb-6">Drive it, or look inside</h3>
     <LinkCards cards={cards} />
   </section>
 
@@ -138,9 +145,7 @@ internal network
         ))
       }
     </div>
-    <p class="max-w-[70ch] text-[0.85rem] text-grey-3">
-      Embedded live view, the status readout, the workflow gallery and the agent chat land here as
-      the demo hosts come online. Until then the cards above open each one directly.
-    </p>
   </section>
+
+  <WorkflowGallery />
 </Layout>
