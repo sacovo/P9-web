@@ -1,0 +1,20 @@
+---
+import { results } from '../lib/p9';
+---
+
+<section id="results" class="shell scroll-mt-20 pt-20!">
+  <p class="eyebrow">{results.eyebrow}</p>
+  <h3 class="rule mb-6">{results.heading}</h3>
+
+  <div class="grid gap-x-[var(--spacing-pad)] gap-y-6 lg:grid-cols-12">
+    <div class="lg:col-span-7">
+      <p class="mb-0 text-grey-4">{results.body}</p>
+    </div>
+    <div class="lg:col-span-4 lg:col-start-9">
+      <div class="border-l-2 border-yellow bg-grey-1 p-5">
+        <p class="eyebrow">Still open</p>
+        <p class="mb-0 text-[0.92rem] text-grey-4">{results.open}</p>
+      </div>
+    </div>
+  </div>
+</section>

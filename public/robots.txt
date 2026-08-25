@@ -1,4 +1,0 @@
-User-agent: *
-Allow: /
-
-Sitemap: https://p9-sacovo.fhnw-rover.ch/sitemap-index.xml

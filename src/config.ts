@@ -7,9 +7,26 @@
  * the demo deployments exist.
  */
 
+import siteConfig from '../site.config.json';
+
 export type Maybe<T> = T | null;
 
+/**
+ * The zone every host below lives in, and the subdomain labels inside it.
+ *
+ * Both come from `site.config.json` at the repo root, which is also read by
+ * `astro.config.mjs` for canonical URLs and by `deploy/` for the Caddy sites.
+ * Currently `fhnw-rover.sacovo.ch`, which resolves today; moving the whole
+ * stack to `fhnw-rover.ch` is that one file.
+ */
+export const BASE_DOMAIN = siteConfig.baseDomain;
+export const LABELS = siteConfig.labels;
+
+const host = (label: string): string => `https://${label}.${BASE_DOMAIN}`;
+
 export interface Hosts {
+  /** This site. Used for canonical URLs and the CSP frame-ancestors grant. */
+  site: Maybe<string>;
   /** n8n editor. The owner login is the whole authentication boundary. */
   n8n: Maybe<string>;
   /** Read-only turtlesim viewer (noVNC) and the rover's /api/status. */
@@ -25,11 +42,16 @@ export interface Hosts {
   recap: Maybe<string>;
 }
 
+/**
+ * Set an entry to null to take that host offline everywhere at once: its tile
+ * degrades to a disabled card and its embed is not rendered.
+ */
 export const hosts: Hosts = {
-  n8n: 'https://n8n-demo.fhnw-rover.ch',
-  turtle: 'https://n8n-turtle.fhnw-rover.ch',
-  n8nPreview: 'https://n8n-preview.fhnw-rover.ch',
-  recap: 'https://recap-demo.fhnw-rover.ch',
+  site: host(LABELS.site),
+  n8n: host(LABELS.n8n),
+  turtle: host(LABELS.turtle),
+  n8nPreview: host(LABELS.n8nPreview),
+  recap: host(LABELS.recap),
 };
 
 /**
@@ -75,12 +97,11 @@ export const repos = {
 /**
  * The compiled report.
  *
- * Null until the thesis is frozen: the working PDF still carries todonotes
- * and a "List of Tasks and Topics to Cover" page, which must not ship. Run
- * `node scripts/sync-report.mjs` and set this to the emitted path when it is
- * ready — every download link appears on its own once it is non-null.
+ * Refresh with `node scripts/sync-report.mjs` after rebuilding the thesis.
+ * Set `pdf` back to null to hide every download link at once — the pages
+ * render fine without it.
  */
 export const report = {
-  pdf: null as Maybe<string>,
-  pages: null as Maybe<number>,
+  pdf: '/p9-mars-rover-autonomy.pdf' as Maybe<string>,
+  pages: 167 as Maybe<number>,
 };

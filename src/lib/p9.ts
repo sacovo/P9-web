@@ -58,6 +58,20 @@ export interface Figure {
   wide: boolean;
 }
 
+export interface Supporting {
+  eyebrow: string;
+  heading: string;
+  body: string[];
+  note: string;
+}
+
+export interface Results {
+  eyebrow: string;
+  heading: string;
+  body: string;
+  open: string;
+}
+
 export interface Figures {
   eyebrow: string;
   heading: string;
@@ -70,10 +84,13 @@ export interface P9Content {
   hero: Hero;
   overview: Overview;
   contributions: Contribution[];
+  supporting: Supporting;
+  results: Results;
   demos: Demo[];
   figures: Figures;
 }
 
 export const content: P9Content = raw;
 
-export const { site, hero, overview, contributions, demos, figures } = content;
+export const { site, hero, overview, contributions, supporting, results, demos, figures } =
+  content;

@@ -1,6 +1,12 @@
 ---
 import { figures } from '../lib/p9';
 import { report } from '../config';
+
+/**
+ * The dialog below is the styleguide's own `.materialboxed` lightbox,
+ * reimplemented: click to enlarge, click anywhere or press Escape to dismiss.
+ * Its shipped main.js is not imported — this is a dozen lines and no jQuery.
+ */
 ---
 
 <section id="figures" class="shell scroll-mt-20 pt-20!">
@@ -43,9 +49,6 @@ import { report } from '../config';
   </div>
 </section>
 
-<!-- The styleguide's own `.materialboxed` lightbox, reimplemented: click to
-     enlarge, click anywhere or press Escape to dismiss. Its shipped main.js is
-     not imported — this is a dozen lines and carries no jQuery. -->
 <dialog
   id="lightbox"
   class="max-h-none max-w-none border-0 bg-transparent p-0 backdrop:bg-[#292929]/95"
