@@ -1,0 +1,44 @@
+# First-boot override. Use this INSTEAD of roverdemo.override.yml, once.
+#
+# An unclaimed n8n instance can be claimed by whoever reaches it first, and
+# with the Code node that means running code on this server. So n8n's very
+# first start must not be reachable from the internet.
+#
+# The demo's own compose already binds n8n to 127.0.0.1 and puts it only on the
+# project's internal network. This file changes nothing about that — it only
+# pins the images so nothing is compiled here. The effect is that Caddy has no
+# route to n8n (it is not on `p9-edge`), so the editor is reachable only
+# through an SSH tunnel:
+#
+#   docker compose -p roverdemo \
+#     -f docker-compose.yml -f ~/p9/deploy/roverdemo.setup.yml up -d
+#
+#   ssh -L 5678:localhost:5678 debian@<server>    # then open localhost:5678
+#   # create the owner account
+#
+# Then switch to the real override, which attaches n8n to the edge and drops
+# the published ports:
+#
+#   docker compose -p roverdemo \
+#     -f docker-compose.yml -f ~/p9/deploy/roverdemo.override.yml up -d
+#
+# ros2 joins the edge immediately: the viewer is read-only at the protocol
+# level (x11vnc runs with -viewonly) and has nothing to claim, so there is no
+# reason to keep it dark while the editor is being set up.
+
+services:
+  n8n:
+    image: ${N8N_DEMO_IMAGE:-ghcr.io/sacovo/n8n-nodes-ros2:n8n-amd64}
+    build: !reset null
+
+  ros2:
+    image: ${ROS2_DEMO_IMAGE:-ghcr.io/sacovo/n8n-nodes-ros2:ros2-amd64}
+    build: !reset null
+    networks:
+      - default
+      - edge
+
+networks:
+  edge:
+    external: true
+    name: p9-edge

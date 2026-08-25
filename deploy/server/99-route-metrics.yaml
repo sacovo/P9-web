@@ -1,0 +1,19 @@
+# Both NICs take a DHCP default route at metric 100, and cloud-init lists
+# enp4s0 first. A locally generated packet still picks the right one, because
+# its source address selects the matching route — which is why SSH kept
+# working. A *forwarded* packet has no source to select on and takes whichever
+# default comes first, so replies from published container ports left via
+# enp4s0 carrying an enp3s0 source address and were dropped upstream. The
+# public address maps to enp3s0, so it has to win outright.
+#
+# Numbered above 50-cloud-init.yaml so it merges on top and survives a
+# cloud-init re-run.
+network:
+  version: 2
+  ethernets:
+    enp3s0:
+      dhcp4-overrides:
+        route-metric: 50
+    enp4s0:
+      dhcp4-overrides:
+        route-metric: 200

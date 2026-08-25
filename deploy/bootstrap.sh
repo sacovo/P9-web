@@ -36,6 +36,24 @@ if [[ ! -f /etc/docker/daemon.json ]]; then
   sudo systemctl restart docker
 fi
 
+# --- default route priority ------------------------------------------------
+# This host has two DHCP NICs that both take a default route at metric 100,
+# with enp4s0 listed first. Locally generated traffic still picks correctly,
+# because the source address selects the matching route — which is why SSH is
+# unaffected and the problem looks like "the web server is down" rather than
+# "the network is misconfigured". Forwarded traffic has no source to select
+# on and takes the first default, so replies from published container ports
+# left via the wrong NIC and were dropped upstream. The public address maps to
+# enp3s0, so it must win outright.
+if [[ -f "$(dirname "${BASH_SOURCE[0]}")/server/99-route-metrics.yaml" ]] \
+   && [[ ! -f /etc/netplan/99-route-metrics.yaml ]]; then
+  echo "==> Pinning default-route metrics (enp3s0 wins)"
+  sudo install -m 600 -o root -g root \
+    "$(dirname "${BASH_SOURCE[0]}")/server/99-route-metrics.yaml" \
+    /etc/netplan/99-route-metrics.yaml
+  sudo netplan apply
+fi
+
 mkdir -p "$REMOTE_DIR/deploy/site" "$REMOTE_DIR/deploy/recap"
 
 echo
