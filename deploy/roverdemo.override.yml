@@ -1,14 +1,16 @@
 # Compose override applied ONLY on this server, so the rover demo repository
 # needs no change and still runs standalone exactly as its README says.
 #
-# It does three things: pins n8n to the prebuilt amd64 image so this box never
-# compiles n8n (2 vCPU / 3 GB — the source build takes half an hour on a
-# GitHub runner with four times the cores), attaches n8n and ros2 to the edge
-# network so the P9 Caddy can reach them by service name, and drops the demo's
-# own published ports so nothing but the edge is exposed.
+# It does three things: pins both services to prebuilt amd64 images so this box
+# never compiles anything (2 vCPU / 3 GB / 20 GB — the n8n source build alone
+# takes half an hour on a GitHub runner with more cores), attaches them to the
+# edge network so the P9 Caddy can reach them by service name, and drops the
+# demo's own published ports so nothing but the edge is exposed.
 #
 #   cd ~/p9/n8n-nodes-ros2/demo
 #   docker compose -p roverdemo \
+#     -f docker-compose.yml -f ~/p9/deploy/roverdemo.override.yml \
+#     pull && docker compose -p roverdemo \
 #     -f docker-compose.yml -f ~/p9/deploy/roverdemo.override.yml \
 #     up -d n8n ros2
 #
@@ -29,6 +31,10 @@ services:
     ports: !reset []
 
   ros2:
+    # Also built in CI. Colcon-building ROS 2 on this box would need the build
+    # tree and the resulting image on the same 20 GB disk at once.
+    image: ${ROS2_DEMO_IMAGE:-ghcr.io/sacovo/n8n-nodes-ros2:ros2-amd64}
+    build: !reset null
     networks:
       - default
       - edge
