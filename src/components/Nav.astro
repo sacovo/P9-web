@@ -14,9 +14,10 @@ const links = [
   { href: '/demos/pusht', label: 'PushT demo' },
   { href: '/#libero', label: 'Rollouts' },
   { href: '/#figures', label: 'Figures' },
-  // Vendored Slidev build in public/, not an Astro route — hence the trailing
-  // slash: it is a directory index, and the deck's own base path expects it.
-  { href: '/smolvla-presentation/', label: 'Talk slides' },
+  // The talk deck is deliberately NOT linked from here or from the hero: it is
+  // still being reworked between talk dates, so it stands on its own at
+  // /smolvla-presentation/ until it is ready to be pointed at. It is still
+  // built and deployed — see scripts/sync-deck.mjs.
 ];
 ---
 
