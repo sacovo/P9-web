@@ -1,0 +1,83 @@
+name: Deploy
+
+# The site is a static build rsynced onto the box that serves it, so this is
+# `deploy/deploy.sh` with a checkout in front of it rather than a second,
+# drifting copy of the deployment steps.
+#
+# Pull requests run the build only: they never see SSH_PRIVATE_KEY (GitHub
+# withholds secrets from fork PRs, and the deploy steps are skipped for every
+# PR regardless), so a PR can prove the site compiles without being able to
+# publish it.
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+# One deploy at a time, and never cancel one midway: the rsync --delete would
+# leave the served directory half-written.
+concurrency:
+  group: deploy-p9
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+
+      - run: npm ci
+
+      - name: Build
+        if: github.event_name == 'pull_request'
+        run: npm run build
+
+      - name: Load the deploy key and pin the host
+        if: github.event_name != 'pull_request'
+        env:
+          SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
+        run: |
+          mkdir -p ~/.ssh
+          chmod 700 ~/.ssh
+          # install first, so the key is never briefly world-readable.
+          install -m 600 /dev/null ~/.ssh/id_deploy
+          printf '%s\n' "$SSH_PRIVATE_KEY" > ~/.ssh/id_deploy
+          cat deploy/known_hosts >> ~/.ssh/known_hosts
+          cat >> ~/.ssh/config <<'EOF'
+          Host *
+            IdentityFile ~/.ssh/id_deploy
+            IdentitiesOnly yes
+            StrictHostKeyChecking yes
+            BatchMode yes
+          EOF
+
+      - name: Build and deploy
+        if: github.event_name != 'pull_request'
+        run: ./deploy/deploy.sh
+
+      # Proves the box is actually serving what was just pushed, rather than
+      # trusting that a green rsync means a live site.
+      - name: Smoke-test the deployed site
+        if: github.event_name != 'pull_request'
+        run: |
+          label=$(node -p "require('./site.config.json').labels.site")
+          domain=$(node -p "require('./site.config.json').baseDomain")
+          base="https://$label.$domain"
+          fail=0
+          # -L because /demos/rover redirects to its directory index, and
+          # /smolvla-presentation/30 because that one is only reachable through
+          # the Caddyfile's SPA fallback — the part most likely to be missing.
+          for path in / /demos/rover /demos/pusht /smolvla-presentation/ /smolvla-presentation/30; do
+            code=$(curl -sSL -o /dev/null -w '%{http_code}' --retry 3 --retry-delay 5 "$base$path" || true)
+            printf '%s  %s\n' "${code:-000}" "$base$path"
+            [ "$code" = 200 ] || fail=1
+          done
+          exit $fail

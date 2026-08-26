@@ -8,14 +8,20 @@
 # demonstration.
 set -euo pipefail
 
-SERVER="${P9_SERVER:-debian@195.15.197.209}"
-REMOTE_DIR="${P9_REMOTE_DIR:-/home/debian/p9}"
 REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-
 cd "$REPO_ROOT"
 
-# --- the two domain configs must agree, or links point at a dead zone -------
+# The site's own hostname is also the box it is served from, so the target
+# follows site.config.json like everything else rather than being a second
+# place to edit when the zone moves. deploy/known_hosts pins its host key, so
+# a changed name needs a refreshed pin too.
 config_domain="$(node -p "require('./site.config.json').baseDomain")"
+site_label="$(node -p "require('./site.config.json').labels.site")"
+
+SERVER="${P9_SERVER:-debian@$site_label.$config_domain}"
+REMOTE_DIR="${P9_REMOTE_DIR:-/home/debian/p9}"
+
+# --- the two domain configs must agree, or links point at a dead zone -------
 if [[ -f deploy/.env ]]; then
   env_domain="$(grep -E '^BASE_DOMAIN=' deploy/.env | cut -d= -f2-)"
   if [[ "$config_domain" != "$env_domain" ]]; then
@@ -45,7 +51,10 @@ rsync -az --inplace deploy/Caddyfile deploy/docker-compose.yml \
   "$SERVER:$REMOTE_DIR/deploy/"
 
 echo "==> Reloading the edge"
-ssh "$SERVER" "cd $REMOTE_DIR/deploy && docker compose up -d && docker compose exec -w /etc/caddy caddy caddy reload --config /etc/caddy/Caddyfile 2>/dev/null || true"
+# `up -d` must succeed — CI reports this script's exit status, and a stack that
+# failed to come up should not read as a green deploy. The reload after it is
+# best-effort: `up -d` has already restarted Caddy if its config changed, so a
+# failure here means there was nothing left to reload.
+ssh "$SERVER" "cd $REMOTE_DIR/deploy && docker compose up -d && { docker compose exec -w /etc/caddy caddy caddy reload --config /etc/caddy/Caddyfile 2>/dev/null || echo '(no live reload; the stack was recreated instead)'; }"
 
-site_label="$(node -p "require('./site.config.json').labels.site")"
 echo "==> https://$site_label.$config_domain"

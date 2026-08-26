@@ -92,3 +92,22 @@ labels black on black.
 Static `dist/`. `vercel.json` and `public/_headers` carry the same headers, so
 Vercel and Cloudflare Pages behave identically. Set the real domain in
 `astro.config.mjs` (`site:`) before the first production build.
+
+In practice it is served by the Caddy in `deploy/` on the box the site's own
+hostname points at, and **a push to `main` publishes it**:
+`.github/workflows/deploy.yml` runs `deploy/deploy.sh` — the same script you
+would run by hand — and then checks the live site actually answers, including
+a deep link into the Slidev deck. Pull requests run the build only; the deploy
+steps are skipped, so a PR never touches the server.
+
+| Piece | Where |
+|---|---|
+| `SSH_PRIVATE_KEY` | repo secret; its public half is `github@p9-web` in the server's `authorized_keys` |
+| host key | pinned in `deploy/known_hosts`, so CI never trusts-on-first-use |
+| target host | derived from `site.config.json` (`debian@<site label>.<baseDomain>`), overridable with `P9_SERVER` |
+
+Deploying by hand still works and does exactly the same thing:
+
+```bash
+./deploy/deploy.sh
+```

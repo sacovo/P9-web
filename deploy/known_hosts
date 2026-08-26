@@ -1,0 +1,13 @@
+# The deploy target's SSH host key, pinned so CI does not trust-on-first-use a
+# key it has no way to check. Copied from a workstation that already had the
+# host in its own known_hosts, and verified to match:
+#
+#   256 SHA256:TdponGy4FJg6Dlpl8j9DALnB3hpStTsjESyYYVNvsMQ (ED25519)
+#
+# If the server is ever rebuilt, the deploy fails loudly with a host-key
+# mismatch — which is the point. Refresh it deliberately, from a machine that
+# already trusts the new host:
+#
+#   ssh-keyscan -t ed25519 p9.fhnw-rover.sacovo.ch >> deploy/known_hosts
+#
+p9.fhnw-rover.sacovo.ch ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIJ+2RjtRj88LXL3lDq3ctOq3+raBACQ4PhKMjMdxbbhQ
