@@ -1,0 +1,1 @@
+var e=`/smolvla-presentation/figs/fig_labels.png`;export{e as t};

@@ -1,0 +1,1 @@
+var e=`/smolvla-presentation/img/fhnw-logo.png`;export{e as t};

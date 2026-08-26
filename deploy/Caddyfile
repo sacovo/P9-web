@@ -17,8 +17,22 @@
 	}
 
 	# Hashed assets are immutable; the PDF and images are not.
-	@immutable path /_astro/*
+	@immutable path /_astro/* /smolvla-presentation/assets/*
 	header @immutable Cache-Control "public, max-age=31536000, immutable"
+
+	# The Slidev deck under /smolvla-presentation is a single-page app:
+	# /smolvla-presentation/7 is a client route, not a file, so a reload or a
+	# shared deep link must land on the deck's own index rather than the site
+	# 404 below. Files that do exist under that prefix are served first.
+	# vercel.json and public/_redirects carry the same rule.
+	#
+	# The scope has to come from the `route` wrapper: try_files takes no
+	# matcher of its own and reads one as one more candidate file name, which
+	# quietly turns this into a site-wide fallback and swallows every 404.
+	@deck path /smolvla-presentation/*
+	route @deck {
+		try_files {path} {path}/index.html /smolvla-presentation/index.html
+	}
 
 	handle_errors {
 		rewrite * /404.html

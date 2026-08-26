@@ -1,0 +1,1 @@
+var e=`/smolvla-presentation/figs/pipeline.svg`;export{e as t};

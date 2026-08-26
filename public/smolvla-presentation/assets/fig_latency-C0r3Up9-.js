@@ -1,0 +1,1 @@
+var e=`/smolvla-presentation/figs/fig_latency.png`;export{e as t};

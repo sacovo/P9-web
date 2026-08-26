@@ -1,0 +1,8 @@
+# Cloudflare Pages / Netlify. The Vercel equivalent is in vercel.json and the
+# Caddy one in deploy/Caddyfile — all three must say the same thing.
+#
+# The Slidev deck is a single-page app: /smolvla-presentation/7 is a client
+# route, not a file, so a reload or a shared deep link has to be answered with
+# the deck's own index instead of the site's 404. Real files under that prefix
+# (assets, figs, videos) are matched before this rule and are unaffected.
+/smolvla-presentation/*    /smolvla-presentation/index.html    200

@@ -59,6 +59,21 @@ then set `report.pdf` in `src/config.ts`. Every download link appears on its
 own once it is non-null. Check the PDF was built **without** todonotes first —
 the working build carries a "List of Tasks and Topics to Cover" page.
 
+## The talk deck
+
+`/smolvla-presentation/` is the Slidev deck from `../smolvla-presentation`,
+vendored into `public/` as a plain static build — no submodule, because the
+site has to build with no sibling checkout present. Refresh it with:
+
+```bash
+node scripts/sync-deck.mjs              # or pass the deck's path
+```
+
+It is a single-page app, so `/smolvla-presentation/7` is a client route rather
+than a file. The fallback to the deck's own index is stated three times, once
+per host: `vercel.json`, `public/_redirects` and `deploy/Caddyfile`. Change one
+and change the other two.
+
 ## Design
 
 The FHNW student-project styleguide is the base; its tokens in
