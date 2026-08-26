@@ -1,16 +1,19 @@
 /**
  * Build the Slidev talk deck and copy it into public/smolvla-presentation/.
  *
- * The deck lives in its own repo (`../smolvla-presentation`) and is vendored
- * here as a plain static build rather than a submodule: it changes on talk
- * dates, not on site deploys, and the site must build with no sibling
- * checkout present.
+ * The deck source lives in `presentation/`, an npm workspace of this repo, so
+ * one `npm ci` installs Astro and Slidev together and `npm run build` produces
+ * the site and the deck in one step. The build output is generated, not
+ * committed — see .gitignore.
+ *
+ * This has to run BEFORE `astro build`, because Astro copies public/ wholesale
+ * into dist/ and will not see a deck that does not exist yet.
  *
  * `--base` has to match the path it is served from, or every asset in the
  * deck 404s. Client-side routes under that prefix are handled by the SPA
  * fallbacks in vercel.json, public/_redirects and deploy/Caddyfile.
  *
- *   node scripts/sync-deck.mjs [path/to/smolvla-presentation]
+ *   node scripts/sync-deck.mjs [path/to/deck]
  */
 import { execFileSync } from 'node:child_process';
 import { cpSync, existsSync, rmSync } from 'node:fs';
@@ -22,13 +25,13 @@ const here = dirname(fileURLToPath(import.meta.url));
 /** Also the URL path, so the two cannot drift. */
 const BASE = '/smolvla-presentation/';
 
-const DEFAULT_SOURCE = resolve(here, '../../smolvla-presentation');
+const DEFAULT_SOURCE = resolve(here, '../presentation');
 const TARGET = resolve(here, `../public${BASE}`);
 
 const source = process.argv[2] ? resolve(process.argv[2]) : DEFAULT_SOURCE;
 
 if (!existsSync(resolve(source, 'slides.md'))) {
-  console.error(`No Slidev deck at ${source}\nClone it next to this repo, or pass its path.`);
+  console.error(`No Slidev deck at ${source}`);
   process.exit(1);
 }
 

@@ -61,13 +61,22 @@ the working build carries a "List of Tasks and Topics to Cover" page.
 
 ## The talk deck
 
-`/smolvla-presentation/` is the Slidev deck from `../smolvla-presentation`,
-vendored into `public/` as a plain static build — no submodule, because the
-site has to build with no sibling checkout present. Refresh it with:
+`/smolvla-presentation/` is the Slidev deck in **`presentation/`**, an npm
+workspace of this repo. `npm install` at the root installs the site and the
+deck together, and `npm run build` runs `scripts/sync-deck.mjs` before
+`astro build`, so one command produces the site with the deck already in it.
+Its output under `public/smolvla-presentation/` is generated and gitignored.
 
 ```bash
-node scripts/sync-deck.mjs              # or pass the deck's path
+npm run dev:deck     # live deck, press `p` for presenter mode
+npm run build:deck   # just the deck → public/smolvla-presentation/
+npm run export:deck  # → presentation/dist/smolvla-presentation.pdf
 ```
+
+The deck is deliberately **not linked** from the hero or the nav while it is
+still being reworked; it stands on its own at its URL. See
+`presentation/README.md` for the deck itself, and `src/components/Nav.astro`
+for the note about the missing link.
 
 It is a single-page app, so `/smolvla-presentation/7` is a client route rather
 than a file. The fallback to the deck's own index is stated three times, once

@@ -1,0 +1,19 @@
+{
+  "name": "smolvla-presentation",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "slidev --open",
+    "build": "slidev build",
+    "export": "slidev export --output dist/smolvla-presentation.pdf",
+    "export:notes": "slidev export-notes --output dist/smolvla-speaker-notes.pdf"
+  },
+  "dependencies": {
+    "@slidev/cli": "^52.1.0",
+    "@slidev/theme-default": "^0.25.0",
+    "vue": "^3.5.13"
+  },
+  "devDependencies": {
+    "playwright-chromium": "^1.49.0"
+  }
+}

@@ -1,10 +1,21 @@
 node_modules/
 dist/
 .astro/
+.slidev/
+__pycache__/
 .DS_Store
 .env
 .env.production
 .vercel
+
+# Built from presentation/ by scripts/sync-deck.mjs during `npm run build`.
+# Content-hashed filenames, so committing it means a full rewrite every build.
+public/smolvla-presentation/
+
+# LaTeX intermediates from the deck's TikZ figures; the .svg is the artefact.
+presentation/assets/*.aux
+presentation/assets/*.log
+presentation/assets/*.pdf
 
 # Server-specific, holds the n8n encryption key
 deploy/.env

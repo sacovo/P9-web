@@ -4,9 +4,15 @@
   "private": true,
   "type": "module",
   "description": "Companion site for the FHNW master's thesis P9 — Mars Rover Autonomy",
+  "workspaces": [
+    "presentation"
+  ],
   "scripts": {
     "dev": "astro dev",
-    "build": "astro build",
+    "dev:deck": "npm run dev --workspace smolvla-presentation",
+    "build": "npm run build:deck && astro build",
+    "build:deck": "node scripts/sync-deck.mjs",
+    "export:deck": "npm run export --workspace smolvla-presentation",
     "preview": "astro preview",
     "astro": "astro"
   },
