@@ -14,9 +14,9 @@ drawings:
   persist: false
 fonts:
   provider: none
-  sans: "InterVariable, Inter, Helvetica, Arial, sans-serif"
-  serif: "Georgia, serif"
-  mono: "Courier New, Courier, monospace"
+  sans: 'InterVariable, Inter, Helvetica, Arial, sans-serif'
+  serif: 'Georgia, serif'
+  mono: 'Courier New, Courier, monospace'
 ---
 
 <div class="yellow-band"></div>
@@ -57,10 +57,8 @@ audience seeing the two clips without being told which is which.
 -->
 
 ---
-
 layout: center
 class: px-16
-
 ---
 
 <div class="grid grid-cols-2 gap-10">
@@ -81,10 +79,8 @@ the next 40 minutes are about."
 -->
 
 ---
-
 layout: center
 class: text-center px-24
-
 ---
 
 <p class="text-3xl leading-snug" style="font-weight: 500">
@@ -115,25 +111,32 @@ answered it for the class of model a mobile robot can actually carry.
 <div class="grid grid-cols-2 gap-12 mt-4">
 <div>
 
-|              | π\*<sub>0.6</sub> (RECAP) | SmolVLA        |
-| ------------ | ------------------------- | -------------- |
-| Parameters   | 4 B + 860 M               | **450 M**      |
-| Reference HW | RTX 4090                  | Jetson Orin NX |
-| Board power  | 450 W                     | **10–25 W**    |
-| bf16 weights | ≈ 10 GB                   | **≈ 0.9 GB**   |
+|  | π*<sub>0.6</sub> (RECAP) | SmolVLA |
+|---|---|---|
+| Parameters | 4 B + 860 M | **450 M** |
+| Reference HW | RTX 4090 | Jetson Orin NX |
+| Board power | 450 W | **10–25 W** |
+| bf16 weights | ≈ 10 GB | **≈ 0.9 GB** |
 
 </div>
-<div class="pt-6">
+<div>
 
-<div class="takeaway warn">
-The strong results in the literature exist on the hardware a mobile robot
-<strong>does not have</strong>.
+<img src="/img/barbara-campus.jpg" class="w-full border border-[#deded9]" />
+
+
+<div class="takeaway warn mt-4">
+      Many new approaches for training a robotic policy exist for hardware our rover does not have.
 </div>
 
 </div>
 </div>
 
 <!--
+Point at the photo before the table. That is OUR rover, on our campus, and the
+Jetson on it is the whole reason any of this is constrained — the numbers on the
+left are abstract until the room has seen the thing that has to carry them. One
+sentence, then move to the table.
+
 The Jetson's 16 GB is UNIFIED memory, shared with cameras, inverse kinematics,
 navigation and the OS. Ten gigabytes of weights would leave about 6 GB for the
 entire rest of the robot, before inference activations even start.
@@ -188,10 +191,6 @@ within 8 %.
 
 </div>
 
-<div class="takeaway mt-12 text-base">
-Rollout post-training <strong>amplifies the quality of the rollouts you feed
-it</strong>.
-</div>
 
 <!--
 Thirty seconds. Its only job: three parts, and the results section is the payoff.
@@ -208,7 +207,7 @@ Thirty seconds. Its only job: three parts, and the results section is the payoff
 
 - 2 camera images
 - Joint state
-- _“put the bowl on the plate”_
+- *“put the bowl on the plate”*
 
 <div class="kicker mb-2 mt-6">Out</div>
 
@@ -294,11 +293,11 @@ collect more demos?", and the results add: you need both.
 
 Simulated Franka arm · 3 suites × 10 tasks
 
-| suite     | varies                |
-| --------- | --------------------- |
-| `spatial` | spatial reference     |
-| `goal`    | the goal              |
-| `long`    | **multi-stage** tasks |
+| suite | varies |
+|---|---|
+| `spatial` | spatial reference |
+| `goal` | the goal |
+| `long` | **multi-stage** tasks |
 
 <p class="note mt-3">50 episodes per task → <strong>n = 500 per suite</strong>, SE ≈ ±2 points.</p>
 
@@ -455,20 +454,7 @@ Leave the cost hanging. It gets answered in part 2.
 <div class="grid grid-cols-2 gap-12 mt-5 text-sm">
 <div>
 
-<div class="kicker mb-2">One loop, run twice</div>
 
-1. A **critic** scores every frame of the dataset
-2. Advantage vs. threshold → `+` / `−` per frame
-3. Train the policy, label as a **conditioning token**
-4. It collects its own rollouts → **round 2**
-
-</div>
-<div>
-
-<div class="takeaway warn">
-<strong>Our delta:</strong> a 10× smaller model, and rollouts that are
-<strong>fully autonomous</strong>: no teleoperation corrections.
-</div>
 
 </div>
 </div>
@@ -565,10 +551,6 @@ clamps to the **bottom of the value support**.
 </div>
 <div class="pt-8">
 
-<div class="takeaway warn">
-Without this step every frame looks acceptable, so the conditioning token has
-nothing to condition on.
-</div>
 
 </div>
 </div>
@@ -655,20 +637,36 @@ $$A_t = \textstyle\sum_{k<N} r_{t+k} + V(s_{t+N}) - V(s_t)$$
 
 <p class="note">“Was this step better than expected?”</p>
 
-<div class="kicker mb-2 mt-6">Threshold</div>
+<div class="legend mt-5 text-sm">
+
+| | |
+|---|---|
+| <em>V</em>(<em>s</em>) | the critic: expected **normalised time-to-completion**, −1 at the start, 0 when done |
+| <em>s<sub>t</sub></em> | the frame it sees — two camera images and the joint state |
+| <em>r</em> | a constant **time cost**, −1/<em>T</em><sub>max</sub> per step |
+| <em>N</em> | the lookahead, **50 frames** |
+
+</div>
+
+</div>
+<div>
+
+<div class="kicker mb-2">Threshold</div>
 
 $$A_t > \varepsilon \;\Rightarrow\; \texttt{+} \qquad \text{else} \qquad \texttt{−}$$
 
 <p class="note">ε = the 100(1−f⁺)-th percentile over that task's <em>successful</em> frames.</p>
 
-</div>
-<div>
-
-<div class="kicker mb-2">Classifier-free guidance</div>
+<div class="kicker mb-2 mt-8">Classifier-free guidance</div>
 
 $$v^{\text{cfg}} = v_\theta + w\,\bigl(v^{+}_\theta - v_\theta\bigr)$$
 
 <p class="note">
+<em>v</em><sup>+</sup><sub>θ</sub> = the velocity field with the <code>+</code> token in the
+prefix, <em>v</em><sub>θ</sub> = with the token dropped.
+</p>
+
+<p class="note mt-2">
 <em>w</em> = 0 unconditional · <em>w</em> = 1 positive conditional · <em>w</em> &gt; 1 extrapolates past the
 positive mode.
 </p>
@@ -683,6 +681,19 @@ Do not derive the TD residual. The audience needs exactly two things:
 
 N = 50. TD rather than Monte Carlo because the bootstrapped value keeps variance
 manageable over 300-step episodes.
+
+The legend is there so nobody has to ask; do not read it out. If someone does
+ask about the reward, the honest answer is the interesting one: there is no
+shaped reward at all. Every step costs the same −1/T_max, so the sum over N
+steps is a CONSTANT, and the whole advantage is the amount the critic's value
+moved over those 50 frames minus that fixed time budget. Progress faster than
+the clock is positive, slower is negative. That is also why the critic has to be
+honest — it is the only thing in the formula carrying information.
+
+Implementation note, if pressed: it is computed as (R_t − V_t) − (R_{t+N} −
+V_{t+N}) with R the empirical normalised return, which is the same quantity
+rearranged. Frames within N of the episode end fall back to the Monte-Carlo
+form.
 
 Mechanics: the label is carried as one extra token in the language prefix, with
 token dropout 0.3 — so the model simultaneously learns an unconditional
@@ -708,16 +719,12 @@ $$\mathcal{L} = \underbrace{\mathcal{L}_{\text{AR}}}_{\text{backbone}} \;+\; \un
 
 - Prefix **detached** before the expert sees it, and every VLM parameter frozen
   for that forward pass
-- The backbone's _only_ training signal is an **autoregressive loss over
+- The backbone's *only* training signal is an **autoregressive loss over
   FAST-tokenised actions**
 
 </div>
 <div class="pt-2">
 
-<div class="takeaway warn">
-The <strong>single largest effect in the paper</strong>, larger than the RL part.
-<br>+5 to +11 points per suite.
-</div>
 
 <div class="takeaway mt-5">
 The backbone still <em>learns about actions</em> — just in the representation it
@@ -914,14 +921,14 @@ information, and a target to regress the jump onto. One slide each.
 
 <div class="kicker mb-2">A second time input</div>
 
-The expert already takes the flow time _t_. Add a **target time _s_**, and
-reinterpret the output as the _average_ velocity carrying <em>x<sub>t</sub></em>
-from _t_ to _s_.
+The expert already takes the flow time *t*. Add a **target time _s_**, and
+reinterpret the output as the *average* velocity carrying <em>x<sub>t</sub></em>
+from *t* to *s*.
 
-|                  |                                     |
-| ---------------- | ----------------------------------- |
-| _s_ = _t_        | the ordinary instantaneous velocity |
-| _t_ = 1, _s_ = 0 | **the whole jump, one pass**        |
+| | |
+|---|---|
+| *s* = *t* | the ordinary instantaneous velocity |
+| *t* = 1, *s* = 0 | **the whole jump, one pass** |
 
 <p class="note mt-2">
 sinusoidal embedding of <em>s</em> → Linear · SiLU · Linear → <strong>added</strong> to
@@ -1091,11 +1098,11 @@ means a new distillation run.
 </div>
 <div>
 
-| variant         |  spatial |     goal |     long |      avg |
-| --------------- | -------: | -------: | -------: | -------: |
-| no baking       |     74.2 | **84.2** | **40.0** | **66.1** |
-| self-distilled  |     67.0 |     72.4 |     32.6 |     57.3 |
-| frozen original | **76.8** |     75.2 |     25.2 |     59.1 |
+| variant | spatial | goal | long | avg |
+|---|---:|---:|---:|---:|
+| no baking | 74.2 | **84.2** | **40.0** | **66.1** |
+| self-distilled | 67.0 | 72.4 | 32.6 | 57.3 |
+| frozen original | **76.8** | 75.2 | 25.2 | 59.1 |
 
 </div>
 </div>
@@ -1127,8 +1134,8 @@ deploy.
 -->
 
 ---
-
-## layout: section
+layout: section
+---
 
 <div class="kicker mb-4">Part 3</div>
 
@@ -1317,9 +1324,9 @@ direction points away from useful behaviour.
 
 <div class="kicker mb-2">Gain from guidance on spatial</div>
 
-| fine-tuning mix          |     gain |
-| ------------------------ | -------: |
-| rollout-only, f⁺ = 0.8   |     +1.0 |
+| fine-tuning mix | gain |
+|---|---:|
+| rollout-only, f⁺ = 0.8 | +1.0 |
 | **co-trained**, f⁺ = 0.8 | **+6.6** |
 
 <div class="takeaway warn mt-6">
@@ -1332,12 +1339,12 @@ separation through rollout-only fine-tuning.
 
 <div class="kicker mb-2">Diagnostic: force the negative token</div>
 
-| policy   | suite   | positive | negative |
-| -------- | ------- | -------: | -------: |
-| f⁺ = 0.8 | long    |     35.8 |     34.8 |
-| f⁺ = 0.4 | long    |     33.2 |     29.4 |
-| f⁺ = 0.3 | spatial |     66.0 | **66.4** |
-| f⁺ = 0.3 | goal    |     73.6 | **76.4** |
+| policy | suite | positive | negative |
+|---|---|---:|---:|
+| f⁺ = 0.8 | long | 35.8 | 34.8 |
+| f⁺ = 0.4 | long | 33.2 | 29.4 |
+| f⁺ = 0.3 | spatial | 66.0 | **66.4** |
+| f⁺ = 0.3 | goal | 73.6 | **76.4** |
 
 <p class="note mt-3">
 At f⁺ = 0.3 the negative token scores <strong>higher</strong>. The separation is
@@ -1447,10 +1454,10 @@ Let the clips run while you say the last sentence.
 
 Bypass the critic entirely: label by **episode outcome** alone.
 
-| labelling        |  spatial |     goal |     long |      avg |
-| ---------------- | -------: | -------: | -------: | -------: |
-| critic, f⁺ = 0.8 | **77.8** |     80.0 |     35.8 |     64.5 |
-| outcome-only     |     72.8 | **81.8** | **40.0** | **64.9** |
+| labelling | spatial | goal | long | avg |
+|---|---:|---:|---:|---:|
+| critic, f⁺ = 0.8 | **77.8** | 80.0 | 35.8 | 64.5 |
+| outcome-only | 72.8 | **81.8** | **40.0** | **64.9** |
 
 </div>
 <div class="pt-4">
@@ -1489,10 +1496,10 @@ would settle it is one 90-minute fine-tuning run we did not get to.
 <div class="grid grid-cols-2 gap-12 mt-4">
 <div>
 
-| policy            |  spatial |     goal |     long |      avg |
-| ----------------- | -------: | -------: | -------: | -------: |
-| original, 10-step | **80.0** | **86.2** |     38.2 | **68.1** |
-| SnapFlow, 1 step  |     74.2 |     84.2 | **40.0** |     66.1 |
+| policy | spatial | goal | long | avg |
+|---|---:|---:|---:|---:|
+| original, 10-step | **80.0** | **86.2** | 38.2 | **68.1** |
+| SnapFlow, 1 step | 74.2 | 84.2 | **40.0** | 66.1 |
 
 <div class="takeaway mt-6">
 <strong>Within 2 points</strong>, and <em>better</em> on <code>long</code>, for
@@ -1666,10 +1673,8 @@ stands on.
 -->
 
 ---
-
 layout: center
 class: text-center
-
 ---
 
 # Questions?
@@ -1755,8 +1760,8 @@ edge latency · per-task shifts.
 -->
 
 ---
-
-## layout: section
+layout: section
+---
 
 <div class="kicker mb-4">Backup</div>
 
@@ -1847,12 +1852,12 @@ place from step 1.
 <div class="grid grid-cols-2 gap-12 mt-5">
 <div>
 
-| scheme       | pos % | neg % | pos:fail | neg:succ |
-| ------------ | ----: | ----: | -------: | -------: |
-| f⁺ = 0.3     |  15.0 |  85.0 |      1.7 | **30.9** |
-| f⁺ = 0.4     |  20.7 |  79.3 |      3.0 | **26.5** |
-| f⁺ = 0.8     |  51.5 |  48.5 |     16.2 |      8.9 |
-| outcome-only |  44.2 |  55.8 |      0.0 |      0.0 |
+| scheme | pos % | neg % | pos:fail | neg:succ |
+|---|---:|---:|---:|---:|
+| f⁺ = 0.3 | 15.0 | 85.0 | 1.7 | **30.9** |
+| f⁺ = 0.4 | 20.7 | 79.3 | 3.0 | **26.5** |
+| f⁺ = 0.8 | 51.5 | 48.5 | 16.2 | 8.9 |
+| outcome-only | 44.2 | 55.8 | 0.0 | 0.0 |
 
 <p class="note mt-4">
 All 107,410 rollout frames, failures included.<br>
@@ -1881,11 +1886,11 @@ increase in pos:fail — which is why f-plus = 0.8 wins.
 <div class="grid grid-cols-2 gap-12 mt-5">
 <div>
 
-| device         | dtype | FM (10) | SnapFlow | speed-up |
-| -------------- | ----- | ------: | -------: | -------: |
-| Orin Nano 8 GB | bf16  |     922 |  **255** | **3.6×** |
-| Orin NX 16 GB  | bf16  |     850 |      240 |     3.5× |
-| Orin NX 16 GB  | fp32  |    1143 |      575 |     2.0× |
+| device | dtype | FM (10) | SnapFlow | speed-up |
+|---|---|---:|---:|---:|
+| Orin Nano 8 GB | bf16 | 922 | **255** | **3.6×** |
+| Orin NX 16 GB | bf16 | 850 | 240 | 3.5× |
+| Orin NX 16 GB | fp32 | 1143 | 575 | 2.0× |
 
 <p class="note mt-4">
 JetPack 6, PyTorch 2.11, autocast, batch size 1, two 256×256 cameras, 48 language

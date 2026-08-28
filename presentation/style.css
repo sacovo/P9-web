@@ -200,6 +200,45 @@
   padding-bottom: 1px;
 }
 
+/* --------------------------------------------------------------- legends
+   `symbol → what it means`, under the formulas that would otherwise use
+   undefined variables. Still a table, so the symbols align down the left,
+   but it must not read as DATA: the rules, the right alignment and the
+   yellow bold-cell rule above all have to be undone. */
+.slidev-layout .legend table {
+  margin: 0;
+  font-size: inherit;
+}
+.slidev-layout .legend thead {
+  display: none;
+}
+.slidev-layout .legend td {
+  text-align: left;
+  border-bottom: 0;
+  padding: 0.16rem 0 0.16rem 0;
+  color: var(--fhnw-ink-2);
+  vertical-align: baseline;
+}
+.slidev-layout .legend td:first-child {
+  width: 1%;
+  padding-right: 1.1rem;
+  white-space: nowrap;
+  color: var(--fhnw-black);
+}
+/* The theme puts row rules on `tr` as well as `td`, so both have to go or the
+   legend keeps reading as a data table. */
+.slidev-layout .legend tr,
+.slidev-layout .legend th,
+.slidev-layout .legend td,
+.slidev-layout .legend tr:last-child td {
+  border: 0;
+}
+.slidev-layout .legend table strong {
+  border-bottom: 0;
+  padding-bottom: 0;
+  color: var(--fhnw-black);
+}
+
 /* ---------------------------------------------------------------- code / pre */
 .slidev-layout pre {
   border: 2px dotted var(--fhnw-code-border);
