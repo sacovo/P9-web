@@ -1,0 +1,87 @@
+    \begin{tikzpicture}[
+        font=\scriptsize,
+        blk/.style={draw, line width=0.5pt, rounded corners=2pt, align=center,
+                    inner sep=3pt},
+        data/.style={blk, draw=black!50, fill=black!8},
+        crit/.style={blk, draw=figorange!85!black, fill=figorange!30},
+        pol/.style={blk, draw=figblue!85!black, fill=figblue!15},
+        advpos/.style={blk, draw=figgreen!75!black, fill=figgreen!25},
+        advneg/.style={blk, draw=figvermillion!85!black, fill=figvermillion!16},
+        ar/.style={-{Latex[length=2mm,width=1.3mm]}},
+      ]
+
+    % ---------- panel (a): labelling ----------
+    \node[anchor=west, font=\small\bfseries] at (0.55,1.70)
+        {(a) label every timestep by the progress it made};
+
+    \node[data, text width=1.85cm] (demo) at (1.50,0.60) {expert\\demonstrations};
+    \node[data, text width=1.85cm] (roll) at (1.50,-0.80) {policy rollouts\\mixed quality};
+
+    \node[crit, text width=1.6cm] (critic) at (4.05,-0.10) {time-to-completion\\critic $V(o_t)$};
+
+    \node[blk, draw=black!50, fill=white, text width=2.2cm] (adveq) at (6.80,-0.10)
+        {$A_t = V(o_{t+N}) - V(o_t) - \frac{N}{T_{\max}}$};
+
+    % advantage distribution with the percentile threshold
+    \begin{scope}[shift={(9.45,-0.70)}, xscale=0.58, yscale=0.85]
+      \fill[figgreen!35] (0.55,0) -- plot[domain=0.55:2.10,samples=25]
+            (\x,{exp(-\x*\x)}) -- (2.10,0) -- cycle;
+      \draw[figblue, line width=0.6pt] plot[domain=-2.10:2.10,samples=55]
+            (\x,{exp(-\x*\x)});
+      \draw[black!55, line width=0.4pt] (-2.30,0) -- (2.35,0);
+      \draw[figvermillion, dashed, line width=0.6pt] (0.55,-0.10) -- (0.55,1.10);
+    \end{scope}
+    \node[font=\tiny, align=center] at (9.45,-1.00) {advantage over the dataset};
+    \node[font=\tiny, text=figvermillion!80!black, anchor=south] at (10.25,0.24)
+        {top $f^{+}$};
+
+    \node[advpos, text width=1.4cm] (tokp) at (12.10,0.50) {positive\\advantage token};
+    \node[advneg, text width=1.4cm] (tokn) at (12.10,-0.95) {negative\\advantage token};
+
+    \draw[ar] (demo.east) -- (critic.west);
+    \draw[ar] (roll.east) -- (critic.west);
+    \draw[ar] (critic) -- (adveq);
+    \draw[ar] (adveq.east) -- (8.05,-0.10);
+    \draw[ar] (10.85,-0.25) -- (tokp.west);
+    \draw[ar] (10.85,-0.25) -- (tokn.west);
+
+    % ---------- panel (b): conditional training ----------
+    \draw[black!30] (0.55,-2.20) -- (13.00,-2.20);
+    \node[anchor=west, font=\small\bfseries] at (0.55,-2.60)
+        {(b) train on both labels, with the adv.~token added to the input};
+
+    \node[data, text width=2.1cm] (trip) at (1.75,-3.70)
+        {$(o_t, a_t)$ and its token, positive and negative alike};
+    \node[pol, text width=2.0cm] (pol) at (5.10,-3.70)
+        {advantage-conditioned policy};
+    \node[blk, draw=figpink!75!black, fill=figpink!18, text width=1.8cm] (loss) at (8.20,-3.70)
+        {flow-matching loss};
+    \node[anchor=west, align=left, font=\tiny\itshape] at (9.45,-3.70)
+        {no policy gradient,\\no importance weighting,\\no reward model};
+
+    \draw[ar] (trip) -- (pol);
+    \draw[ar] (pol) -- (loss);
+
+    % ---------- panel (c): inference and the loop ----------
+    \draw[black!30] (0.55,-5.05) -- (13.00,-5.05);
+    \node[anchor=west, font=\small\bfseries] at (0.55,-5.45)
+        {(c) at inference, keep the token positive};
+
+    \node[data, text width=1.4cm] (obs) at (1.55,-6.55) {observation $o_t$};
+    \node[advpos, text width=1.5cm] (clamp) at (4.05,-6.55) {positive token, always};
+    \node[pol, text width=1.4cm] (pol2) at (6.55,-6.55) {the same policy};
+    \node[data, text width=1.4cm] (act) at (9.00,-6.55) {action chunk};
+    \node[data, text width=1.2cm] (rob) at (11.30,-6.55) {robot};
+
+    \draw[ar] (obs) -- (clamp);
+    \draw[ar] (clamp) -- (pol2);
+    \draw[ar] (pol2) -- (act);
+    \draw[ar] (act) -- (rob);
+
+    \draw[ar, figvermillion, dashed, line width=0.6pt]
+        (rob.east) -- (12.55,-6.55) -- (12.55,-7.65) -- (0.15,-7.65)
+        -- (0.15,-0.80) -- (roll.west);
+    \node[font=\tiny, text=figvermillion!80!black, anchor=south] at (6.40,-7.55)
+        {self-improvement: the improved policy collects new rollouts, which are relabelled and trained on again};
+
+    \end{tikzpicture}

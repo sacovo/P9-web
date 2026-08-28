@@ -1,5 +1,6 @@
 ---
 import galleryData from '../../content/gallery.json';
+import WorkflowCanvas from './WorkflowCanvas.astro';
 import { workflowCanvasSrc } from '../config';
 
 /**
@@ -104,17 +105,7 @@ const CHIP_LIMIT = 8;
             </div>
 
             <div class="min-w-0 lg:col-span-9">
-              <div class="border border-grey-2 bg-grey-1">
-                <n8n-demo
-                  workflow={w.workflow}
-                  src={src}
-                  theme="light"
-                  frame="true"
-                  clicktointeract="true"
-                  collapseformobile="true"
-                  hidecanvaserrors="true"
-                />
-              </div>
+              <WorkflowCanvas workflow={w.workflow} src={src} />
             </div>
           </div>
         </article>
@@ -122,17 +113,3 @@ const CHIP_LIMIT = 8;
     }
   </div>
 </section>
-
-<script>
-  // Same custom element as the eleven above. Importing it here too is free:
-  // both components resolve to the one bundled chunk, and this section has to
-  // keep working if the other is ever dropped from the page.
-  import '@n8n_io/n8n-demo-component';
-</script>
-
-<style>
-  n8n-demo {
-    display: block;
-    min-height: 420px;
-  }
-</style>

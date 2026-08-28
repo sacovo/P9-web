@@ -65,29 +65,36 @@ then set `report.pdf` in `src/config.ts`. Every download link appears on its
 own once it is non-null. Check the PDF was built **without** todonotes first —
 the working build carries a "List of Tasks and Topics to Cover" page.
 
-## The talk deck
+## The talk decks
 
-`/smolvla-presentation/` is the Slidev deck in **`presentation/`**, an npm
-workspace of this repo. `npm install` at the root installs the site and the
-deck together, and `npm run build` runs `scripts/sync-deck.mjs` before
-`astro build`, so one command produces the site with the deck already in it.
-Its output under `public/smolvla-presentation/` is generated and gitignored.
+Two Slidev decks live here, each an npm workspace of this repo:
+
+| Workspace | URL | What |
+|---|---|---|
+| `presentation/` | `/smolvla-presentation/` | the SmolVLA + RECAP *Fachvortrag* |
+| `defense/` | `/defense/` | the thesis defence — the whole project, 45 min |
+
+`npm install` at the root installs the site and both decks together, and
+`npm run build` runs `scripts/sync-deck.mjs` once per deck before `astro
+build`, so one command produces the site with both already in it. Their output
+under `public/` is generated and gitignored.
 
 ```bash
-npm run dev:deck     # live deck, press `p` for presenter mode
-npm run build:deck   # just the deck → public/smolvla-presentation/
-npm run export:deck  # → presentation/dist/smolvla-presentation.pdf
+npm run dev:deck        # live Fachvortrag, press `p` for presenter mode
+npm run dev:defense     # live defence deck
+npm run build:decks     # both → public/
+npm run export:defense  # → defense/dist/p9-defense.pdf
 ```
 
-The deck is deliberately **not linked** from the hero or the nav while it is
-still being reworked; it stands on its own at its URL. See
-`presentation/README.md` for the deck itself, and `src/components/Nav.astro`
-for the note about the missing link.
+Neither deck is linked from the hero or the nav; each stands on its own at its
+URL. See `defense/README.md` and `presentation/README.md` for the decks
+themselves, and `src/components/Nav.astro` for the note about the missing link.
 
-It is a single-page app, so `/smolvla-presentation/7` is a client route rather
-than a file. The fallback to the deck's own index is stated three times, once
-per host: `vercel.json`, `public/_redirects` and `deploy/Caddyfile`. Change one
-and change the other two.
+They are single-page apps, so `/defense/7` is a client route rather than a
+file. The fallback to each deck's own index is stated three times, once per
+host: `vercel.json`, `public/_redirects` and `deploy/Caddyfile`. Adding a deck
+means adding it in all three, plus `DECKS` in `scripts/sync-deck.mjs` and the
+smoke test in `.github/workflows/deploy.yml`.
 
 ## Design
 

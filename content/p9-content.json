@@ -2,82 +2,66 @@
   "site": {
     "title": "P9 — Mars Rover Autonomy",
     "subtitle": "Autonomous manipulation and workflow automation for the FHNW Mars Rover",
-    "author": "Sandro Covo",
-    "advisor": "Prof. Dr. Christoph Stamm",
-    "institution": "FHNW University of Applied Sciences and Arts Northwestern Switzerland",
-    "school": "School of Engineering",
     "description": "Companion site to the FHNW master’s thesis P9 — Mars Rover Autonomy: a SmolVLA policy post-trained with RECAP, n8n workflow automation over ROS 2, and TensorRT deployment on the Jetson Orin. With two demos you can drive yourself."
   },
   "hero": {
     "eyebrow": "FHNW · School of Engineering · Master’s thesis",
-    "lead": "A vision-language-action policy, the workflow layer that orchestrates it, and the visual servoing that places the gripper for it — on a rover that competes at the European Rover Challenge.",
+    "lead": "A vision-language-action policy, and the workflow layer that commands it — on a rover that competes at the European Rover Challenge.",
     "image": "/images/rover.webp",
     "imageAlt": "The FHNW Mars Rover with its six-degree-of-freedom manipulator"
   },
   "overview": {
     "eyebrow": "What this is",
-    "heading": "Five contributions, one manipulator",
+    "heading": "One manipulator, two ways to command it",
     "body": [
-      "The FHNW Rover Team competes in the European Rover Challenge, where one of the tasks is operating a maintenance panel. Building on a ROS 2 stack that already ran per-task imitation policies, this thesis extends the rover’s autonomy in five areas, over a reworked manipulator control and safety layer.",
-      "A single language-conditioned SmolVLA policy replaces the per-task models and is post-trained with RECAP, then compiled to TensorRT and distilled so it fits the control cycle on the rover’s Jetson Orin. The workflow tool n8n is bridged to ROS 2, so an operator composes task sequences from topics, services and actions without writing code, and an on-device agent answers free-text questions by calling those same tools. Alongside the policy, a classical visual-servoing phase places the gripper where language cannot specify precisely enough.",
+      "The FHNW Rover Team competes in the European Rover Challenge, where one of the tasks is operating a maintenance panel. Building on a ROS 2 stack that already ran per-task imitation policies, this thesis rebuilds how that manipulator is commanded — a policy that takes an instruction, and a workflow layer that composes the sequences around it.",
       "The report covers all of this in detail. This page is for the parts a PDF cannot hold: a rover you can send somewhere, workflows you can open, and a policy you can argue with."
     ]
   },
-  "contributions": [
+  "pillars": [
     {
       "n": "01",
-      "title": "Vision-language-action policies with reinforcement learning",
-      "body": "A single SmolVLA policy conditioned on a natural-language task description replaces the per-task ACT models of the previous project, extended with RECAP, an advantage-conditioned reinforcement-learning recipe, and SnapFlow-distilled for latency. The architecture is re-tasked by changing the instruction rather than by loading another model.",
+      "title": "SmolVLA, post-trained with RECAP",
+      "body": "A single SmolVLA policy conditioned on a natural-language task description replaces the per-task ACT models of the previous project, post-trained with RECAP, an advantage-conditioned reinforcement-learning recipe. It is re-tasked by changing the instruction rather than by loading another model.",
       "metric": {
         "value": "68.1 %",
         "label": "average LIBERO success, from 62.9 %",
-        "note": "One full pass around the RECAP loop, rollout collection included. The rover lineage skips the rollout stage, so both of its RECAP stages train on demonstrations."
+        "note": "One full pass around the RECAP loop, rollout collection included."
       },
-      "question": "RQ1 · task automation and reinforcement learning"
+      "question": "RQ1 · task automation and reinforcement learning",
+      "demo": { "href": "/demos/pusht", "label": "Open the RECAP demo" }
     },
     {
       "n": "02",
-      "title": "Workflow automation and agentic control",
-      "body": "n8n is bridged to ROS 2 over rosbridge, giving operators a no-code way to compose task sequences from topics, services and actions, with the required order of operations enforced. An LLM agent built inside n8n answers free-text questions by calling those same tools — and a small vision-capable model, fine-tuned on recorded executions of the cloud-driven agent, runs it on board at no per-call cost.",
+      "title": "n8n workflows over ROS 2",
+      "body": "n8n is bridged to ROS 2 over rosbridge, giving operators a no-code way to compose task sequences from topics, services and actions, with the required order of operations enforced. An LLM agent built inside n8n answers free-text questions by calling those same tools, and a small fine-tuned model runs it on board at no per-call cost.",
       "metric": {
         "value": "93 %",
         "label": "tool calls on 43 held-out prompts",
-        "note": "Against the cloud configuration’s 92 %. A few points is a prompt or two: this says fine-tuning closed the gap, not that the local model overtook the cloud one."
+        "note": "Against the cloud configuration’s 92 %: fine-tuning closed the gap, it did not overtake it."
       },
-      "question": "RQ1 · task automation, RQ3 · order enforcement and human-in-the-loop"
+      "question": "RQ1 · task automation, RQ3 · order enforcement and human-in-the-loop",
+      "demo": { "href": "/demos/rover", "label": "Open the n8n demo" }
+    }
+  ],
+  "smaller": [
+    {
+      "title": "Real-time deployment",
+      "value": "330 ms",
+      "label": "per chunk, ≈3 Hz replanning",
+      "body": "Compiled to TensorRT as a VLM prefix and an action expert at different precisions, which is what fits the policy into the control cycle on the Jetson Orin."
     },
     {
-      "n": "03",
-      "title": "Real-time deployment on the Jetson Orin",
-      "body": "The policy is compiled to TensorRT, split into a VLM prefix and a flow-matching action expert running at different precisions. Converting the whole graph to FP16 collapses the policy’s actions on trained weights; TensorRT’s reduced-mantissa TF32 mode for the prefix does not, and passes the numerical acceptance check with the action spread intact.",
-      "metric": {
-        "value": "330 ms",
-        "label": "per chunk, ≈3 Hz replanning",
-        "note": "434 ms with the full ten-step sampler; 4.1× over the 1357 ms uncompiled baseline, leaving 21 ms of the 50 ms control cycle free."
-      },
-      "question": "RQ1 · enabling work"
-    },
-    {
-      "n": "04",
       "title": "Depth sensing",
-      "body": "The 8×8 time-of-flight sensor in the gripper is routed into the policy’s state input through a single configuration entry: the state vector grows by those 64 cells and nothing else about the policy changes. Where no board markers are available, approach and manipulation both fall to the policy, and the grid supplies near-field information the cameras cannot.",
-      "metric": {
-        "value": "64 cells",
-        "label": "added to the state vector",
-        "note": "Whether the policy is better for it was not measured. The grid is kept on the cost argument rather than a demonstrated gain; the ablation is future work."
-      },
-      "question": "RQ2 · marker-free depth-based control"
+      "value": "64 cells",
+      "label": "added to the state vector",
+      "body": "The gripper’s 8×8 time-of-flight grid enters the policy through one configuration entry. Whether the policy is better for it was not measured; the ablation is future work."
     },
     {
-      "n": "05",
       "title": "Visual servoing",
-      "body": "Not every subtask is equally constrained by language. “Pick up the stone” names its target; “rotate the third switch from the left” needs deterministic output, which a VLM cannot provide. The classical approach phase exists for precise placement against repeated, ambiguous targets, and hands the policy a consistent starting pose in a known frame. P9 reimplements the whole perception and control chain in C++ for the margin that leaves on the onboard compute.",
-      "metric": {
-        "value": "18.1 mm",
-        "label": "median error, 25 mm required",
-        "note": "On a registration solved from an earlier recording, as it is on the rover. Gripper markers are used only for the initial registration, so targets outside the camera’s field of view can still be aligned."
-      },
-      "question": "RQ2 · precise positioning"
+      "value": "18.1 mm",
+      "label": "median error, 25 mm required",
+      "body": "A classical approach phase for targets language cannot name precisely — “the third switch from the left” — handing the policy a consistent starting pose."
     }
   ],
   "demos": [
@@ -98,7 +82,7 @@
       "href": "/demos/pusht",
       "eyebrow": "Runs in your browser",
       "title": "SmolVLA + RECAP + guidance, client-side",
-      "body": "The policy family from contribution 01, solving PushT entirely in the browser: Chipmunk2D physics as WASM, inference on WebGPU. Drag the agent away and watch the policy recover; move the guidance weight and watch what it does — and does not — change.",
+      "body": "The policy family from the first of the two systems, solving PushT entirely in the browser: Chipmunk2D physics as WASM, inference on WebGPU. Drag the agent away and watch the policy recover; move the guidance weight and watch what it does — and does not — change.",
       "points": [
         "Take over from the policy mid-episode",
         "Sampled action chunks drawn on the arena",
@@ -119,67 +103,12 @@
       "external": true
     }
   ],
-  "figures": {
-    "eyebrow": "From the report",
-    "heading": "Selected figures",
-    "note": "A handful of figures that read well on a screen. The report has the rest, with the argument around them.",
-    "items": [
-      {
-        "src": "/images/figures/n8n_drill.webp",
-        "alt": "The deep-sampling workflow on the n8n canvas",
-        "caption": "The deep-sampling workflow on the n8n canvas: the form trigger and the operator’s container and mode selection on the left, then five phases — set parameters, drill, unload, tare, weigh. The branch at the bottom exposes the individual drill commands to the operator.",
-        "wide": true
-      },
-      {
-        "src": "/images/figures/toolchanger_workflow.webp",
-        "alt": "The tool-change workflow on the n8n canvas",
-        "caption": "The tool-change workflow. Joint state is read once on the left and replayed on the right, so the arm returns to the pose it started from. Labelled in German, as the team built it.",
-        "wide": true
-      },
-      {
-        "src": "/images/figures/n8n_ros2_agent.webp",
-        "alt": "The ROS 2 agent workflow in n8n",
-        "caption": "The agent: plain tools, so it fills in every ROS name, type and payload itself. Nothing about the robot is hardcoded in the workflow.",
-        "wide": false
-      },
-      {
-        "src": "/images/figures/n8n_nodes_palette.webp",
-        "alt": "The ROS 2 node palette in n8n",
-        "caption": "The node palette: topics, services, actions and the rosapi discovery node, all usable as agent tools.",
-        "wide": false
-      },
-      {
-        "src": "/images/figures/agent_vision_cloud.webp",
-        "alt": "Cloud model answering a vision question about the rover",
-        "caption": "The cloud model’s answer to a vision question…",
-        "wide": false
-      },
-      {
-        "src": "/images/figures/agent_vision_finetuned.webp",
-        "alt": "Finetuned on-board model answering the same vision question",
-        "caption": "…and the finetuned on-board model’s answer to the same one.",
-        "wide": false
-      },
-      {
-        "src": "/images/figures/gripper_markers.webp",
-        "alt": "The gripper with its ArUco markers",
-        "caption": "The gripper carrying the fiducials the approach phase localises it by.",
-        "wide": false
-      },
-      {
-        "src": "/images/figures/maintenance_panel.webp",
-        "alt": "The maintenance panel replica",
-        "caption": "The maintenance-panel replica the servoing accuracy is characterised against — five identical switches, 25 mm of tolerance.",
-        "wide": false
-      }
-    ]
-  },
   "supporting": {
     "eyebrow": "The layer underneath",
     "heading": "Manipulator control and safety gating",
     "body": [
-      "The six-degree-of-freedom manipulator is driven with FZI’s Cartesian controllers. This work added a per-joint weighting to the solver that sets how much each axis contributes to a Cartesian motion, which damps the forearm roll so it no longer absorbs wrist rotations. A MuJoCo model of the manipulator was built and integrated with ROS 2 for smoke tests and as a target for developing the ArUco alignment; it was not used for policy training.",
-      "Both autonomous control modes are gated. A heartbeat from the operator station must be present, so a lost link or a crashed operator interface halts autonomous motion without anyone having to act, and a latching software e-stop aborts the running policy or alignment goal on demand and refuses new ones until it is reset. With the rover’s hardware stop and the cancellable phase actions, they form four layers of stopping that differ in what they leave running and how they resume."
+      "The six-degree-of-freedom manipulator is driven with FZI’s Cartesian controllers, extended here with a per-joint weighting that damps the forearm roll so it no longer absorbs wrist rotations, and mirrored by a MuJoCo model for smoke tests.",
+      "Both autonomous control modes are gated. A heartbeat from the operator station must be present, so a lost link halts autonomous motion without anyone having to act, and a latching software e-stop aborts the running policy or alignment goal and refuses new ones until it is reset."
     ],
     "note": "Described last in the report as the supporting work it is, rather than as a contribution of its own."
   },

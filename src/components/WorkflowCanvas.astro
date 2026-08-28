@@ -1,0 +1,142 @@
+---
+/**
+ * One workflow canvas, mounted only while it is near the viewport.
+ *
+ * `<n8n-demo>` boots a whole n8n frontend in an iframe, and it does so as soon
+ * as it is upgraded: its own IntersectionObserver gates *posting the workflow
+ * in*, not loading the app. This page carries sixteen of them, so leaving that
+ * to the component means sixteen concurrent n8n instances — which is what made
+ * scrolling stutter and canvases go blank as the browser evicted their layers.
+ * Each instance also installs a document-level scroll handler, so the count
+ * matters twice over.
+ *
+ * So the element is created on approach and removed again once it is well out
+ * of the way, which keeps two or three alive at a time. The wrapper's height is
+ * pinned before a removal, or the page would jump under a scroll that is
+ * already moving.
+ */
+interface Props {
+  /** The workflow export, already serialised. */
+  workflow: string;
+  /** The n8n frontend that renders the canvas — see `workflowCanvasSrc`. */
+  src: string;
+}
+
+const { workflow, src } = Astro.props;
+---
+
+<div class="canvas-mount border border-grey-2 bg-grey-1" data-canvas data-workflow={workflow} data-src={src}>
+  <p class="canvas-hint">Canvas loads as it comes into view.</p>
+</div>
+
+<script>
+  const MOUNT_MARGIN = '600px 0px';
+  const KEEP_MARGIN = '1800px 0px';
+  /** Ceiling on live n8n frontends, whatever the scroll does. */
+  const MAX_LIVE = 4;
+
+  const hosts = document.querySelectorAll<HTMLElement>('[data-canvas]');
+
+  /** Mounted, oldest first. */
+  const live: HTMLElement[] = [];
+
+  /** How far off-screen an element is, in pixels; 0 while it is visible. */
+  const distance = (el: HTMLElement) => {
+    const box = el.getBoundingClientRect();
+    return Math.max(0, box.top - window.innerHeight, -box.bottom);
+  };
+
+  // One dynamic import for the page: the Lit bundle is not part of the initial
+  // load, and the first canvas to come near pays for it.
+  let loading: Promise<unknown> | null = null;
+  const component = () => (loading ??= import('@n8n_io/n8n-demo-component'));
+
+  const mount = async (host: HTMLElement) => {
+    if (host.dataset.mounted) return;
+    host.dataset.mounted = 'true';
+
+    await component();
+    // Scrolled past again while the bundle was in flight.
+    if (!host.dataset.mounted) return;
+
+    const canvas = document.createElement('n8n-demo');
+    canvas.setAttribute('workflow', host.dataset.workflow ?? '{}');
+    canvas.setAttribute('src', host.dataset.src ?? '');
+    canvas.setAttribute('theme', 'light');
+    canvas.setAttribute('frame', 'true');
+    canvas.setAttribute('clicktointeract', 'true');
+    canvas.setAttribute('collapseformobile', 'true');
+    canvas.setAttribute('hidecanvaserrors', 'true');
+    host.append(canvas);
+    host.style.minHeight = '';
+    live.push(host);
+
+    // A fast scroll can cross several canvases before any of them leaves the
+    // keep margin, so cap the count here too: drop whichever live canvas is
+    // furthest from the viewport. It comes back if it is scrolled to again.
+    while (live.length > MAX_LIVE) {
+      const furthest = live.reduce((a, b) => (distance(b) > distance(a) ? b : a));
+      unmount(furthest);
+    }
+  };
+
+  const unmount = (host: HTMLElement) => {
+    if (!host.dataset.mounted) return;
+    // Hold the box open at whatever the canvas grew to, so removing it does not
+    // pull the rest of the page upwards mid-scroll.
+    host.style.minHeight = `${host.offsetHeight}px`;
+    delete host.dataset.mounted;
+    host.querySelector('n8n-demo')?.remove();
+    // May not be in the list yet: the far observer can fire while mount() is
+    // still waiting on the component bundle.
+    const at = live.indexOf(host);
+    if (at >= 0) live.splice(at, 1);
+  };
+
+  if ('IntersectionObserver' in window) {
+    const near = new IntersectionObserver(
+      (entries) => entries.forEach((e) => e.isIntersecting && mount(e.target as HTMLElement)),
+      { rootMargin: MOUNT_MARGIN },
+    );
+    const far = new IntersectionObserver(
+      (entries) => entries.forEach((e) => !e.isIntersecting && unmount(e.target as HTMLElement)),
+      { rootMargin: KEEP_MARGIN },
+    );
+    hosts.forEach((host) => {
+      near.observe(host);
+      far.observe(host);
+    });
+  } else {
+    hosts.forEach(mount);
+  }
+</script>
+
+<style>
+  .canvas-mount {
+    min-height: 460px;
+  }
+
+  .canvas-hint {
+    display: flex;
+    min-height: 460px;
+    align-items: center;
+    justify-content: center;
+    margin: 0;
+    padding: 1.5rem;
+    text-align: center;
+    font-size: 0.85rem;
+    color: var(--color-grey-3);
+  }
+
+  [data-mounted] .canvas-hint {
+    display: none;
+  }
+
+  /* The element is created by the script above, so it never carries this
+     component's scope attribute — the box it occupies has to be set globally.
+     Everything inside it is shadow DOM and `theme="light"` handles that. */
+  .canvas-mount :global(n8n-demo) {
+    display: block;
+    min-height: 420px;
+  }
+</style>

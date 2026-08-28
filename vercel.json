@@ -19,12 +19,22 @@
       "headers": [
         { "key": "Cache-Control", "value": "public, max-age=31536000, immutable" }
       ]
+    },
+    {
+      "source": "/defense/assets/(.*)",
+      "headers": [
+        { "key": "Cache-Control", "value": "public, max-age=31536000, immutable" }
+      ]
     }
   ],
   "rewrites": [
     {
       "source": "/smolvla-presentation/:path*",
       "destination": "/smolvla-presentation/index.html"
+    },
+    {
+      "source": "/defense/:path*",
+      "destination": "/defense/index.html"
     }
   ]
 }

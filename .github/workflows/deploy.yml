@@ -72,10 +72,13 @@ jobs:
           domain=$(node -p "require('./site.config.json').baseDomain")
           base="https://$label.$domain"
           fail=0
-          # -L because /demos/rover redirects to its directory index, and
-          # /smolvla-presentation/30 because that one is only reachable through
-          # the Caddyfile's SPA fallback — the part most likely to be missing.
-          for path in / /demos/rover /demos/pusht /smolvla-presentation/ /smolvla-presentation/30; do
+          # -L because /demos/rover redirects to its directory index, and the
+          # numbered deck paths because those are only reachable through the
+          # Caddyfile's SPA fallbacks — the part most likely to be missing, and
+          # each deck needs its own fallback block.
+          for path in / /demos/rover /demos/pusht \
+                      /smolvla-presentation/ /smolvla-presentation/30 \
+                      /defense/ /defense/30; do
             code=$(curl -sSL -o /dev/null -w '%{http_code}' --retry 3 --retry-delay 5 "$base$path" || true)
             printf '%s  %s\n' "${code:-000}" "$base$path"
             [ "$code" = 200 ] || fail=1

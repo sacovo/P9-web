@@ -8,14 +8,19 @@ __pycache__/
 .env.production
 .vercel
 
-# Built from presentation/ by scripts/sync-deck.mjs during `npm run build`.
-# Content-hashed filenames, so committing it means a full rewrite every build.
+# Built from presentation/ and defense/ by scripts/sync-deck.mjs during
+# `npm run build`. Content-hashed filenames, so committing them means a full
+# rewrite every build.
 public/smolvla-presentation/
+public/defense/
 
-# LaTeX intermediates from the deck's TikZ figures; the .svg is the artefact.
+# LaTeX intermediates from the decks' TikZ figures; the .svg is the artefact.
 presentation/assets/*.aux
 presentation/assets/*.log
 presentation/assets/*.pdf
+defense/assets/*.aux
+defense/assets/*.log
+defense/assets/*.pdf
 
 # Server-specific, holds the n8n encryption key
 deploy/.env

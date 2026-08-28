@@ -39,12 +39,9 @@ const codeLinks = [
     <div class="lg:col-span-3">
       <p class="eyebrow text-grey-3!">Thesis</p>
       <ul class="m-0 grid list-none gap-1 p-0 text-[0.9rem]">
-        <li>{site.author}</li>
-        <li class="text-grey-3">Advisor: {site.advisor}</li>
-        <li class="text-grey-3">{site.school}</li>
         {
           report.pdf && (
-            <li class="mt-2">
+            <li>
               <a href={report.pdf} class="text-grey-2! hover:border-paper!">
                 Download the report (PDF)
               </a>
@@ -56,8 +53,6 @@ const codeLinks = [
   </div>
 
   <div class="shell border-t border-grey-3/40 py-5!">
-    <p class="m-0 text-[0.8rem] text-grey-3">
-      © {year} {site.author} · {site.institution}
-    </p>
+    <p class="m-0 text-[0.8rem] text-grey-3">© {year} {site.title}</p>
   </div>
 </footer>

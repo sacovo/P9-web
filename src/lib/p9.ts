@@ -5,13 +5,10 @@
  */
 import raw from '../../content/p9-content.json';
 
+/** No names here: the page carries the project, the report carries the people. */
 export interface SiteMeta {
   title: string;
   subtitle: string;
-  author: string;
-  advisor: string;
-  institution: string;
-  school: string;
   description: string;
 }
 
@@ -34,12 +31,22 @@ export interface Metric {
   note: string;
 }
 
-export interface Contribution {
+/** One of the two systems the page is organised around. */
+export interface Pillar {
   n: string;
   title: string;
   body: string;
   metric: Metric;
   question: string;
+  demo: { href: string; label: string };
+}
+
+/** The claims that ride along with the two — one number, one sentence. */
+export interface SmallClaim {
+  title: string;
+  value: string;
+  label: string;
+  body: string;
 }
 
 export interface Demo {
@@ -75,13 +82,6 @@ export interface Libero {
   pairs: LiberoPair[];
 }
 
-export interface Figure {
-  src: string;
-  alt: string;
-  caption: string;
-  wide: boolean;
-}
-
 export interface Supporting {
   eyebrow: string;
   heading: string;
@@ -96,35 +96,19 @@ export interface Results {
   open: string;
 }
 
-export interface Figures {
-  eyebrow: string;
-  heading: string;
-  note: string;
-  items: Figure[];
-}
-
 export interface P9Content {
   site: SiteMeta;
   hero: Hero;
   overview: Overview;
-  contributions: Contribution[];
+  pillars: Pillar[];
+  smaller: SmallClaim[];
   supporting: Supporting;
   results: Results;
   libero: Libero;
   demos: Demo[];
-  figures: Figures;
 }
 
 export const content: P9Content = raw;
 
-export const {
-  site,
-  hero,
-  overview,
-  contributions,
-  supporting,
-  results,
-  libero,
-  demos,
-  figures,
-} = content;
+export const { site, hero, overview, pillars, smaller, supporting, results, libero, demos } =
+  content;

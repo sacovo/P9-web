@@ -1,31 +1,56 @@
 ---
-import { contributions, supporting } from '../lib/p9';
+/**
+ * The page is organised around two systems — the policy and the workflow
+ * layer. Everything else that came out of the thesis is one number and one
+ * sentence underneath, so the two carry the weight and the rest supports them.
+ */
+import { pillars, smaller, supporting } from '../lib/p9';
 ---
 
 <section id="contributions" class="shell scroll-mt-20 pt-20!">
-  <h3 class="rule mb-8">Contributions</h3>
+  <p class="eyebrow">What was built</p>
+  <h3 class="rule mb-8">Two systems</h3>
 
-  <ol class="m-0 grid list-none gap-[var(--spacing-pad)] p-0 md:grid-cols-2 lg:grid-cols-3">
+  <ol class="m-0 grid list-none gap-[var(--spacing-pad)] p-0 lg:grid-cols-2">
     {
-      contributions.map((c) => (
-        <li class="hoverable flex flex-col border! border-grey-2! bg-paper p-5" data-reveal>
-          <p class="readout eyebrow mb-2! text-ink!">{c.n}</p>
-          <h4 class="text-[1.05rem] leading-[140%]">{c.title}</h4>
-          <p class="mt-2 mb-4 text-[0.95rem] text-grey-4">{c.body}</p>
+      pillars.map((p) => (
+        <li class="hoverable flex flex-col border! border-grey-2! bg-paper p-6" data-reveal>
+          <p class="readout eyebrow mb-2! text-ink!">{p.n}</p>
+          <h4 class="text-[1.35rem] leading-[130%]">{p.title}</h4>
+          <p class="mt-3 mb-5 text-grey-4">{p.body}</p>
 
-          <div class="mt-auto border-t border-grey-2 pt-3">
-            <p class="readout m-0 text-[1.6rem] leading-none">{c.metric.value}</p>
-            <p class="m-0 mt-1 text-[0.85rem] font-medium">{c.metric.label}</p>
-            <p class="m-0 mt-1 text-[0.78rem] leading-[150%] text-grey-3">{c.metric.note}</p>
+          <div class="mt-auto border-t border-grey-2 pt-4">
+            <p class="readout m-0 text-[2rem] leading-none">{p.metric.value}</p>
+            <p class="m-0 mt-1 text-[0.9rem] font-medium">{p.metric.label}</p>
+            <p class="m-0 mt-1 text-[0.8rem] leading-[150%] text-grey-3">{p.metric.note}</p>
           </div>
 
-          <p class="m-0 mt-3 text-[0.72rem] tracking-[0.08em] text-grey-3 uppercase">
-            {c.question}
-          </p>
+          <div class="mt-4 flex flex-wrap items-baseline justify-between gap-x-4 gap-y-2">
+            <p class="m-0 text-[0.72rem] tracking-[0.08em] text-grey-3 uppercase">{p.question}</p>
+            <a href={p.demo.href} class="text-[0.85rem] font-medium">
+              {p.demo.label}
+            </a>
+          </div>
         </li>
       ))
     }
   </ol>
+
+  <div class="mt-12 border-t border-grey-2 pt-8">
+    <p class="eyebrow">Alongside them</p>
+    <ul class="nobullet m-0 grid gap-[var(--spacing-pad)] p-0 md:grid-cols-3">
+      {
+        smaller.map((s) => (
+          <li data-reveal>
+            <h4 class="text-[1rem] leading-[140%]">{s.title}</h4>
+            <p class="readout m-0 mt-2 text-[1.4rem] leading-none">{s.value}</p>
+            <p class="m-0 mt-1 text-[0.82rem] font-medium">{s.label}</p>
+            <p class="m-0 mt-2 text-[0.9rem] text-grey-4">{s.body}</p>
+          </li>
+        ))
+      }
+    </ul>
+  </div>
 
   <div class="mt-12 border-t border-grey-2 pt-8">
     <div class="grid gap-x-[var(--spacing-pad)] gap-y-4 lg:grid-cols-12">
