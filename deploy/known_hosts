@@ -8,6 +8,10 @@
 # mismatch — which is the point. Refresh it deliberately, from a machine that
 # already trusts the new host:
 #
-#   ssh-keyscan -t ed25519 p9.fhnw-rover.sacovo.ch >> deploy/known_hosts
+#   ssh-keyscan -t ed25519 p9.fhnw-rover.ch >> deploy/known_hosts
 #
+# Both names are the same box and the same key. deploy.sh derives the target
+# from site.config.json, so it connects as p9.fhnw-rover.ch; the old name is
+# kept so an older checkout still verifies against this file.
+p9.fhnw-rover.ch ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIJ+2RjtRj88LXL3lDq3ctOq3+raBACQ4PhKMjMdxbbhQ
 p9.fhnw-rover.sacovo.ch ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIJ+2RjtRj88LXL3lDq3ctOq3+raBACQ4PhKMjMdxbbhQ

@@ -1,6 +1,6 @@
 {
   "$comment": "Single source of truth for the deployment's domain. Read by src/config.ts (page links, CSP grant) and astro.config.mjs (canonical URLs, sitemap). deploy/.env must carry the same value.",
-  "baseDomain": "fhnw-rover.sacovo.ch",
+  "baseDomain": "fhnw-rover.ch",
   "labels": {
     "site": "p9",
     "n8n": "n8n-demo",

@@ -24,6 +24,10 @@ services:
       - '443:443/udp'
     environment:
       BASE_DOMAIN: ${BASE_DOMAIN:?set BASE_DOMAIN in .env}
+      # The zone the stack moved off. Defaulted rather than required: the
+      # Caddyfile's redirect block names it unconditionally, and an empty value
+      # there would produce site addresses like `p9.` and fail the config load.
+      LEGACY_DOMAIN: ${LEGACY_DOMAIN:-fhnw-rover.sacovo.ch}
       SITE_LABEL: ${SITE_LABEL:-p9}
       N8N_LABEL: ${N8N_LABEL:-n8n-demo}
       TURTLE_LABEL: ${TURTLE_LABEL:-n8n-turtle}

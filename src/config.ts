@@ -16,8 +16,10 @@ export type Maybe<T> = T | null;
  *
  * Both come from `site.config.json` at the repo root, which is also read by
  * `astro.config.mjs` for canonical URLs and by `deploy/` for the Caddy sites.
- * Currently `fhnw-rover.sacovo.ch`, which resolves today; moving the whole
- * stack to `fhnw-rover.ch` is that one file.
+ * Currently `fhnw-rover.ch`. The stack used to live under
+ * `fhnw-rover.sacovo.ch`, which the edge still answers on as a permanent
+ * redirect; moving the zone again is that one file plus `LEGACY_DOMAIN` in
+ * `deploy/.env`.
  */
 export const BASE_DOMAIN = siteConfig.baseDomain;
 export const LABELS = siteConfig.labels;

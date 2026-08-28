@@ -32,16 +32,22 @@ a link-out and the site still builds, so no phase blocks on DNS.
 
 | Host | Serves |
 |---|---|
-| `p9.fhnw-rover.sacovo.ch` | this site |
-| `n8n-demo.fhnw-rover.sacovo.ch` | the n8n editor |
-| `n8n-turtle.fhnw-rover.sacovo.ch` | read-only turtlesim viewer + `/api/status` |
-| `n8n-preview.fhnw-rover.sacovo.ch` | data-less workflow-canvas renderer |
-| `recap-demo.fhnw-rover.sacovo.ch` | the PushT / RECAP demo |
+| `p9.fhnw-rover.ch` | this site |
+| `n8n-demo.fhnw-rover.ch` | the n8n editor |
+| `n8n-turtle.fhnw-rover.ch` | read-only turtlesim viewer + `/api/status` |
+| `n8n-preview.fhnw-rover.ch` | data-less workflow-canvas renderer |
+| `recap-demo.fhnw-rover.ch` | the PushT / RECAP demo |
 
 The zone and the subdomain labels live in **`site.config.json`** at the repo
 root — read by `src/config.ts` for page links, by `astro.config.mjs` for
 canonical URLs and the sitemap, and by `deploy/` for the Caddy sites. Moving
-the stack to `fhnw-rover.ch` later is that one file.
+the zone again is that one file, plus `BASE_DOMAIN` in `deploy/.env` — which
+`deploy.sh` refuses to run while the two disagree.
+
+The stack moved off `fhnw-rover.sacovo.ch`. The edge still answers on all five
+old names with a permanent redirect to the matching host above, configured by
+`LEGACY_DOMAIN` in `deploy/.env`. Retire it by withdrawing the old DNS records
+first, then deleting that variable and the Caddyfile block it drives.
 
 > **Do not set `N8N_PREVIEW_MODE=true` on `n8n-demo`.** It disables
 > `X-Frame-Options` instance-wide and skips the owner-setup redirect. That is

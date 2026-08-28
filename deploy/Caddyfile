@@ -131,3 +131,29 @@
 		file_server
 	}
 }
+
+# ---------------------------------------------------------------------------
+# The zone this deployment used to live in. Every host under {$LEGACY_DOMAIN}
+# answers with a permanent redirect to the same label under {$BASE_DOMAIN}, so
+# links shared before the move keep working.
+#
+# All five old names still resolve to this box and their certificates are
+# already in the caddy_data volume, so this block issues nothing new.
+#
+# {labels.3} is the leftmost label of a four-label name — p9.fhnw-rover.sacovo.ch
+# is [ch, sacovo, fhnw-rover, p9] counting from the right — which is exactly the
+# site label to carry across. One block therefore covers all five hosts. It is
+# tied to LEGACY_DOMAIN having three labels; a different old zone needs the
+# index adjusted to match.
+#
+# Retire this by withdrawing the old DNS records first, then deleting this
+# block and LEGACY_DOMAIN from .env — in that order, so nothing 301s to a name
+# that has stopped resolving.
+# ---------------------------------------------------------------------------
+{$SITE_LABEL}.{$LEGACY_DOMAIN},
+{$N8N_LABEL}.{$LEGACY_DOMAIN},
+{$TURTLE_LABEL}.{$LEGACY_DOMAIN},
+{$PREVIEW_LABEL}.{$LEGACY_DOMAIN},
+{$RECAP_LABEL}.{$LEGACY_DOMAIN} {
+	redir https://{labels.3}.{$BASE_DOMAIN}{uri} permanent
+}
