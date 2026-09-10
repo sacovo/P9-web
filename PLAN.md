@@ -37,7 +37,7 @@ linked inline where they are relevant.
 | `n8n-demo.fhnw-rover.ch` | the n8n editor (owner login) | demo box, Caddy → `n8n:5678` |
 | `n8n-turtle.fhnw-rover.ch` | read-only turtlesim viewer + `/api/status` | demo box, Caddy → `ros2:6080` / `ros2:8081` |
 | `n8n-preview.fhnw-rover.ch` | data-less workflow-canvas renderer (§6.1) | demo box, second n8n container |
-| `recap-demo.fhnw-rover.ch` | the PushT / RECAP demo | HF Space or Pages, static |
+| `recap-demo.fhnw-rover.ch` | the PushT / RECAP demo | Caddy on the p9 box, static; weights from the HF Hub |
 
 `n8n-turtle` replaces the `robot.example.org` placeholder in
 `demo/.env.example`; `VIEWER_DOMAIN` and `N8N_DOMAIN` get set accordingly.
@@ -267,21 +267,36 @@ thesis page should depend on long-term.
 
 ## 9. `/demos/pusht`
 
-- Full-bleed iframe of `https://recap-demo.fhnw-rover.ch`, plus an
-  "open standalone" link.
-- A precheck banner **before** the frame loads: `navigator.gpu` for WebGPU,
-  and an explicit note that the real policy pulls ~500 MB of ONNX weights.
-  That mirrors the mitigation already in that repo's risk register.
-- The measured numbers around the frame are read at build time from
-  `web/src/ui/scenarios.json` (the file `make_scenarios.py` writes), never
-  copied by hand — that repo's rule is no claims without numbers, and a
-  hand-copied figure is a figure that drifts.
-- Two prerequisites: its M5, pointed at `recap-demo.fhnw-rover.ch` (an HF
-  Space behind that CNAME, or Pages), and no `X-Frame-Options` on that host.
-- Because it is an iframe, the demo's own stylesheet is what a visitor sees.
-  So Phase 5 includes a small restyle of `pusht-web-demo/web/src/style.css` to
-  the FHNW tokens. That is exactly the reskin-without-touching-the-app that
-  its AGENTS.md anticipated ("no CSS frameworks... it gets reskinned later").
+**Built.** `PushtEmbed.astro` plus the page around it.
+
+- Full-bleed iframe of `https://recap-demo.fhnw-rover.ch/?embed=1`, plus an
+  "open standalone" link. Full bleed rather than the page column because the
+  demo's stage is two columns above ~950 px and one below: inside the shell it
+  would drop to the tall single-column layout on screens that did not need to.
+- **Click to activate.** The demo starts two workers on load and the real
+  policy pulls 1.58 GB; neither should happen because someone scrolled past.
+  The poster carries the precheck — `navigator.gpu.requestAdapter()` rather
+  than just `navigator.gpu`, since Linux browsers ship the object behind a flag
+  that yields no adapter — and the download size, weighed off the export rather
+  than remembered. (The ~500 MB in the first draft was wrong by 3x.)
+- **Height by postMessage.** 1414 px of content at 1024 px wide against
+  3054 px below 950 px, so no fixed height works. `?embed=1` makes the demo
+  post its own height (`main.ts`, `reportHeightToParent`) and the wrapper
+  resizes to it. Scrolling stays enabled inside the frame so a dropped message
+  degrades to an inner scrollbar rather than to clipped content.
+- The measured numbers around the frame are read from
+  `content/pusht-scenarios.json`, which `scripts/sync-pusht-scenarios.mjs`
+  derives from `web/src/ui/scenarios.json` **and** the `parity_eval.py` outputs
+  — the guidance sweep is in neither the demo's JSON nor its prose in a form
+  that could be read, which is how that prose came to be quoting round 4 while
+  the page served round 6. Nothing on the page is typed by hand.
+- The prerequisite `frame-ancestors` grant is in `deploy/Caddyfile`; the demo
+  cannot be framed from anywhere else, including localhost, so this page can
+  only be checked against the deployed demo.
+- The restyle of `pusht-web-demo/web/src/style.css` to the FHNW tokens is done
+  in that repo — ported values, not an import, since it is a canvas app with no
+  framework. Exactly the reskin-without-touching-the-app its AGENTS.md
+  anticipated.
 
 ## 9.1 Repository links
 
@@ -323,11 +338,12 @@ Remaining:
    (`n8n-turtle`, `n8n-preview`) and the `frame-ancestors` change on the
    viewer (§5).
 2. **`pusht-web-demo` has no git remote configured at all** — `git remote -v`
-   is empty. It needs one before it can be linked or deployed.
-3. **PushT M5** — the demo has no deployment yet; `/demos/pusht` is last.
-4. **GitLab project visibility** (§9.1).
-5. **Model-key spend cap** before the agent chat goes on the page (§7).
-6. The rover team's own workflow canvases are labelled in German; the site is
+   is empty. It needs one before its source can be linked; the "The source"
+   card on `/demos/pusht` degrades to a disabled tile until then. The demo
+   itself deploys from the local checkout and does not need one.
+3. **GitLab project visibility** (§9.1).
+4. **Model-key spend cap** before the agent chat goes on the page (§7).
+5. The rover team's own workflow canvases are labelled in German; the site is
    in English and will say so in those captions.
 
 ## 12. Build order
@@ -338,4 +354,4 @@ Remaining:
 | 2 | Workflow gallery + `/demos/rover` interface tables, demos as link-outs | `n8n-preview` container |
 | 3 | Live viewer embed, HUD, snapshot, operator manual | DNS + the Caddy changes |
 | 4 | Agent chat, click-to-activate | model-key spend cap |
-| 5 | `/demos/pusht` + restyle of that demo's stylesheet | PushT M5 |
+| 5 | `/demos/pusht` + restyle of that demo's stylesheet | done — PushT M5 shipped 2026-08-28 |

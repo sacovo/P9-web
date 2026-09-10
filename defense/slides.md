@@ -427,7 +427,7 @@ Placing the gripper, and knowing how well
 </p>
 
 <!--
-Clock check: minute 6 of 44. Two slides, two minutes.
+Clock check: minute 6 of 46. Two slides, two minutes.
 
 This is a contribution rather than scaffolding — the classical half of a
 substep, reimplemented in C++, and the one part of the work measured end to end
@@ -586,13 +586,19 @@ One model, an instruction, and its own experience
 </p>
 
 <!--
-Clock check: minute 8 of 44. If you are past 10, cut the FAST half of the
-knowledge-insulation slide and the guidance-baking notes.
+Clock check: minute 8 of 46. If you are past 10, cut the FAST half of the
+knowledge-insulation slide.
 
-This part is thirteen slides and it is the technical core. Budget 14 minutes.
+This part is fifteen slides and it is the technical core. Budget 16 minutes.
 The order is: what the model is (3 slides), why imitation is not enough (1),
-RECAP (4), distillation (1), what came out (4). Making it *fast* is part 3 and
-is no longer in here.
+RECAP (4), distillation (1), what came out (6, the last two being the SnapFlow
+correction and the guidance follow-up). Making it *fast* is part 3 and is no
+longer in here.
+
+The two added slides are what pushes the talk from 44 to 46, over the ceiling.
+"Can guidance survive distillation?" is the designated cut and its notes say so:
+dropping it returns you to 44 and costs no thesis-relevant claim, since the
+correction slide before it carries the one that matters.
 -->
 
 ---
@@ -1273,9 +1279,13 @@ for reasons that have nothing to do with the policy.
 <tr v-click><td>+ its own rollout data &nbsp;<span class="dim">(f⁺ = 0.8)</span></td><td>77.8</td><td>80.0</td><td class="neg">35.8</td><td>64.5</td></tr>
 <tr v-click><td>+ demonstration co-training &nbsp;<span class="dim">(f⁺ = 0.4)</span></td><td>75.4</td><td>84.2</td><td><strong>43.8</strong></td><td>67.8</td></tr>
 <tr v-click><td>+ demonstration co-training &nbsp;<span class="dim">(f⁺ = 0.8)</span></td><td><strong>80.0</strong></td><td><strong>86.2</strong></td><td>38.2</td><td><strong>68.1</strong></td></tr>
-<tr v-click><td>+ SnapFlow distillation</td><td>74.2</td><td>84.2</td><td>40.0</td><td>66.1</td></tr>
+<tr v-click><td>+ SnapFlow distillation<sup>*</sup></td><td>74.2 &rarr; <strong>80.6</strong></td><td>84.2 &rarr; <strong>87.6</strong></td><td>40.0 &rarr; 39.4</td><td>66.1 &rarr; <strong>69.2</strong></td></tr>
 </tbody>
 </table>
+
+<p v-click class="note mt-2"><sup>*</sup>Corrected after the report: the
+target-time head was disabled by its initialisation, so the figures on the left
+measure SnapFlow with its mechanism switched off. Next slide.</p>
 
 <div v-click class="grid grid-cols-3 gap-6 mt-6 text-sm">
 <div class="takeaway"><strong>1.</strong> The pre-training recipe is the largest effect.</div>
@@ -1296,6 +1306,13 @@ Claim 2: rollout post-training transfers to a 450M model on the short-horizon
          suites, and makes `long` WORSE — 35.8 against 41.6.
 Claim 3: 68.1 against 62.9 for the base, 55.3 without insulation.
 
+The asterisk is yours to explain, and better volunteered than waited for. The
+SnapFlow row is the only one that moved: the report's 66.1 measured the
+distillation with its target-time mechanism disabled by an initialisation bug,
+and 69.2 is the same recipe with it working. One sentence here -- "that row is
+corrected, I will show you why next" -- and the next slide does the work. Do not
+start the explanation on this slide.
+
 Two caveats to volunteer rather than defend later. The absolute numbers are not
 comparable to published SmolVLA figures, because none of these models saw the
 community pre-training corpus. And a fourth suite, `object`, is missing: every
@@ -1304,6 +1321,161 @@ lifts it to 53.6 %, which says the policy had overfitted to the appearance of
 the training images. It affects every configuration identically, so it
 separates nothing and it is excluded rather than printed as a row of zeros.
 -->
+
+
+---
+
+# A bug in SnapFlow, and what it was hiding
+
+<div class="grid grid-cols-5 gap-8 mt-3">
+<div class="col-span-3">
+
+<table class="mt-1 text-sm">
+<thead>
+<tr><th>one-step policy</th><th>spatial</th><th>goal</th><th>long</th><th>avg</th></tr>
+</thead>
+<tbody>
+<tr><td>as reported <span class="dim">(head disabled)</span></td><td>74.2</td><td>84.2</td><td>40.0</td><td>66.1</td></tr>
+<tr v-click><td><strong>with the head working</strong></td><td><strong>80.6</strong></td><td><strong>87.6</strong></td><td>39.4</td><td><strong>69.2</strong></td></tr>
+<tr v-click><td class="dim">ten-step teacher, for reference</td><td class="dim">80.0</td><td class="dim">86.2</td><td class="dim">38.2</td><td class="dim">68.1</td></tr>
+</tbody>
+</table>
+
+<div class="kicker mb-1 mt-4">The target-time head</div>
+
+$$\text{MLP}(s) = W_2\,\sigma(W_1 s + b_1) + b_2, \qquad W_1 = W_2 = 0$$
+
+<p class="note">Zeroing <em>both</em> layers makes it identity at step 0 — and
+permanently constant: <span class="mono">SiLU(0)=0</span> kills the gradient to
+<em>W₂</em>, and <em>W₂</em>=0 kills it to <em>W₁</em>. Only <em>b₂</em> ever moves.</p>
+
+</div>
+<div class="col-span-2 pt-1">
+
+<div class="takeaway warn">
+Every distilled checkpoint had <strong>ƒ(x,t,s) independent of s</strong>. The
+one-step jump and the instantaneous field were bit-identical.
+</div>
+
+<div v-click class="takeaway mt-4">
+Fixed, distillation costs <strong>nothing</strong>: 69.2 against the ten-step
+teacher's 68.1. The 2-point penalty was the disabled mechanism.
+</div>
+
+<div v-click class="takeaway mt-4 text-sm">
+Best at <strong>w = 0</strong> on all three suites — which is also the cheapest,
+since guidance runs the prefix twice.
+</div>
+
+</div>
+</div>
+
+<!--
+This is the slide to be straight about. The number in the report is 66.1 and it
+is wrong — not mismeasured, but measuring a mechanism that never ran.
+
+The bug in one sentence: the head that tells the network "predict the jump" and
+not "predict the local velocity" was initialised to all zeros in both layers, so
+it could never learn anything. Zero-init is standard practice — adaLN-Zero,
+ControlNet — but it applies to the OUTPUT layer only, exactly so gradients keep
+flowing. Zeroing both is an identity that cannot leave.
+
+Three independent confirmations, if pressed. The trained weights: W1, b1, W2
+exactly zero, only b2 moved. The algebra above. And end-to-end, embed_suffix
+returns bit-identical embeddings for s=0 and s=t on the shipped checkpoint.
+
+There was a second half to the fix, worth mentioning only if asked: every RECAP
+checkpoint already carries a zeroed copy of the head, so warm-starting the
+student loaded the zeros back over a correct initialisation. Fixing the init
+alone changed nothing.
+
+What it means for the thesis claim: the numbers in the report are the ABLATION
+of SnapFlow's mechanism, not SnapFlow. Retrained with it working, the one-step
+policy matches its own ten-step teacher, which is what the SnapFlow paper
+reports and what we had failed to reproduce.
+
+If asked why long does not improve: it does not, 39.4 against 40.0, unchanged.
+The gain is entirely on the two short-horizon suites.
+-->
+
+---
+
+# Can guidance survive distillation?
+
+<div class="grid grid-cols-5 gap-8 mt-3">
+<div class="col-span-3">
+
+<table class="mt-1 text-sm">
+<thead>
+<tr><th>on <code>spatial</code>, n = 500</th><th>w=0</th><th>best</th><th>gain</th></tr>
+</thead>
+<tbody>
+<tr><td class="dim">ten-step teacher</td><td class="dim">73.4</td><td class="dim">80.0</td><td class="dim">+6.6</td></tr>
+<tr v-click><td>one-step, ordinary CFG</td><td><strong>80.6</strong></td><td>80.6</td><td class="neg">−0.0</td></tr>
+<tr v-click><td>+ guidance baked in</td><td>73.6</td><td>73.6</td><td class="neg">−0.0</td></tr>
+<tr v-click><td>+ conditioned on <em>w</em></td><td colspan="3" class="dim">ignores its own input</td></tr>
+<tr v-click><td>+ direction supervised <span class="dim">(PDM)</span></td><td>74.8</td><td>79.2</td><td><strong>+4.4</strong></td></tr>
+</tbody>
+</table>
+
+<div class="kicker mb-1 mt-4">What guidance does to a one-step policy</div>
+
+<p class="note">A <em>fixed direction scaled linearly by w</em> — only 0.28 aligned
+with the teacher's, and 1.47× too large. Supervising the direction separately
+fixes both: <strong>0.50</strong> aligned, <strong>1.06×</strong>.</p>
+
+</div>
+<div class="col-span-2 pt-1">
+
+<div v-click class="takeaway">
+Guidance <strong>can</strong> be transplanted into one step. The obstacle is
+branch-level under-identification, not one-step generation.
+</div>
+
+<div v-click class="takeaway warn mt-4">
+And it buys <strong>nothing</strong>: 79.2 against 80.6 unguided. The gain is
+paid for by a weaker baseline.
+</div>
+
+<div v-click class="takeaway mt-4 text-sm">
+Deployed: plain distillation at <strong>w = 0</strong>. One prefix pass, one
+denoising step.
+</div>
+
+</div>
+</div>
+
+<!--
+Optional slide. Drop it first if you are behind — the previous slide carries the
+thesis-relevant claim; this one is the follow-up investigation.
+
+The story in four beats, one per click.
+
+  1  Ordinary CFG on the one-step policy: flat. Guidance is worth +6.6 to the
+     teacher and nothing to the student.
+  2  Baking a fixed weight in: worse, and no guidance response either.
+  3  Conditioning on w as an input: the policy learns to ignore it. Blends at
+     different w differ only by w(v_pos - v_unc), which is small next to the
+     field being regressed, so the loss barely rewards attending to w.
+     Conditioning collapse.
+  4  Supervising the DIRECTION as its own loss term — positive-direction
+     matching, from the CFG-distillation literature — and guidance finally
+     works: +4.4, peaking at w=1.5 exactly like the teacher.
+
+The honest ending is that it still loses. 79.2 against 80.6 is inside the
+~2-point standard error, and PDM pays for its guidance response with a lower
+unguided baseline. So the deployed configuration does not change.
+
+Why this is still worth a slide: it says the failure was a fixable property of
+how the branches are supervised, not something intrinsic to one-step sampling.
+That is a different claim from "guidance and distillation are incompatible",
+which is what the flat rows alone would suggest.
+
+If asked what the measurement is: for each policy, how far its action chunk
+moves when w rises, compared to how far the teacher's moves. Direction and
+magnitude, at 12 states, 32 noise draws each.
+-->
+
 
 ---
 
@@ -1519,7 +1691,7 @@ Getting one chunk from 1357 ms to 330
 </p>
 
 <!--
-Clock check: minute 22 of 44. Two slides, two minutes.
+Clock check: minute 24 of 46. Two slides, two minutes.
 
 This is its own contribution in the report and it is the one an engineer in the
 room will want. The arc is two sentences: the policy as trained does not fit
@@ -1686,7 +1858,7 @@ A task an operator can read off a canvas
 <img src="/img/n8n_battery_check.png" class="w-full max-w-[820px] mx-auto border border-[#deded9] bg-white" />
 
 <!--
-Clock check: minute 24 of 44.
+Clock check: minute 26 of 46.
 
 Under 22 means you rushed part 2. Past 27, drop the "what n8n is not" slide and
 compress the tool change into one sentence on the maintenance slide.
@@ -2040,7 +2212,7 @@ The same tools, driven by a model — and then by a model on board
 </p>
 
 <!--
-Clock check: minute 31 of 44. Five slides, seven minutes.
+Clock check: minute 33 of 46. Five slides, seven minutes.
 
 The arc: an agent is worth having for the open-ended half of the work; it must
 not drive the hardware; and it can be moved onto the rover for free if you are
@@ -2374,7 +2546,7 @@ What runs, what does not, and what I would do next
 </p>
 
 <!--
-Clock check: minute 38 of 44. Seven slides and then the demo — these are short,
+Clock check: minute 40 of 46. Seven slides and then the demo — these are short,
 and they are the ones that decide what the room remembers.
 
 Do not speed up here. If you are late, drop "What I would keep from this" and

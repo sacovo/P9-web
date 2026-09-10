@@ -16,8 +16,8 @@ them.
 
 ## Structure
 
-52 talk slides and 15 backup, in six parts, plus a cover, seven dividers
-and a closing slide — 75 in all. Every slide carries presenter notes, and the notes
+54 talk slides and 15 backup, in six parts, plus a cover, seven dividers
+and a closing slide — 77 in all. Every slide carries presenter notes, and the notes
 on the dividers carry a **clock check**: where you should be at that point, and
 what to drop first if you are late.
 
@@ -25,21 +25,25 @@ what to drop first if you are late.
 |---|---:|---:|
 | Opening — the rover, the panel, the questions, the system, ROS2, the stopping layers | 7 | 0 min |
 | 1 — the approach phase: markers, the pooled fit, the error budget | 2 | 6 min |
-| 2 — the policy: SmolVLA, RECAP, SnapFlow, LIBERO, the rollout demo | 17 | 8 min |
-| 3 — real time on the Jetson | 3 | 24 min |
-| 4 — the workflow layer | 8 | 27 min |
-| 5 — the agent, and the fine-tuned local model | 6 | 33 min |
-| 6 — on the rover, the ERC, closing, and the workflow demo | 9 | 39 min |
+| 2 — the policy: SmolVLA, RECAP, SnapFlow, LIBERO, the rollout demo | 19 | 8 min |
+| 3 — real time on the Jetson | 3 | 26 min |
+| 4 — the workflow layer | 8 | 29 min |
+| 5 — the agent, and the fine-tuned local model | 6 | 35 min |
+| 6 — on the rover, the ERC, closing, and the workflow demo | 9 | 41 min |
 
 The parts follow the report's contributions rather than the order the system is
 built in, so a reader of the report can map one onto the other. The two pieces
 of supporting work sit in the opening, where the report also puts them: the
 layer map (§2.4) and the four stopping layers (§2.1.4).
 
-The deck is paced for 41 minutes and the live demo at the end is the other
-three, so the 45-minute ceiling is met with the demo and comfortably beaten
-without it. That is why the demo sits *after* the conclusions: skipping it
-costs nothing.
+The deck is paced for 43 minutes and the live demo at the end is the other
+three, which puts a full run at 46 and **over the 45-minute ceiling**. Two of
+part 2's slides are the reason: the SnapFlow correction and the guidance
+follow-up, added after the report. The correction is not optional — it changes a
+number the report states — so the designated cut is *Can guidance survive
+distillation?*, whose notes say as much. Dropping it returns the talk to 44 with
+the demo and costs no thesis-relevant claim. That is also why the demo sits
+*after* the conclusions: skipping it costs nothing either.
 
 Results are deliberately **not** re-created as slides *in the talk*. The
 companion site carries the LIBERO rollouts, the workflow canvases, the datasets

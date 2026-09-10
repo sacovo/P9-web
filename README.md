@@ -24,6 +24,21 @@ Site copy lives in **`content/p9-content.json`** — one file the whole page
 renders from, typed by `src/lib/p9.ts`, so a wrong shape is a build error
 rather than a blank section.
 
+`content/pusht-scenarios.json` is the exception: it is **generated**, not
+edited. Every figure on `/demos/pusht` comes from it, derived from the
+`pusht-web-demo` checkout by
+
+```bash
+node scripts/sync-pusht-scenarios.mjs [path/to/pusht-web-demo]
+```
+
+Re-run it after that repo re-measures — it reads `web/src/ui/scenarios.json`
+and the `parity_eval.py` outputs, computes the paired guidance comparison
+itself, and weighs the ONNX export for the download figure in the precheck.
+Nothing on that page is typed by hand, which is the point: the demo's own
+explainer prose quoted a superseded checkpoint's numbers for a while, and prose
+is where that happens.
+
 ## External URLs
 
 Everything pointing outside this repo is in **`src/config.ts`**. Each entry is

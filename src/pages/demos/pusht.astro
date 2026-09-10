@@ -2,25 +2,62 @@
 import Layout from '../../layouts/Layout.astro';
 import PageHeader from '../../components/PageHeader.astro';
 import LinkCards, { type LinkCard } from '../../components/LinkCards.astro';
+import PushtEmbed from '../../components/PushtEmbed.astro';
 import { hosts, repos } from '../../config';
+import {
+  meta,
+  scenarios,
+  guidance,
+  baseline,
+  checkpoint,
+  weightsUrl,
+  guidanceIsFlat,
+  fmt,
+  fmtW,
+} from '../../lib/pusht';
+
+/**
+ * Every figure on this page comes from `content/pusht-scenarios.json`, which
+ * `scripts/sync-pusht-scenarios.mjs` derives from the demo repo's evaluation
+ * outputs. PLAN.md §9: no claim without a number, and no number typed by hand.
+ * If a sentence below needs a figure that is not in that file, the fix is to
+ * teach the script to read it, not to type it here.
+ */
+
+const flat = guidanceIsFlat(guidance);
+/** How often the shipped weight cleared the bar — the baseline is quoted against it. */
+const shippedCleared = guidance?.rows.find((r) => r.shipped)?.cleared ?? '—';
+const paired = meta.paired;
+/** Standard errors, sign dropped: the direction is stated in words. */
+const parityZ = Math.abs(paired.z);
+/** onnxruntime's own provider ids are lowercase; the prose is not. */
+const BACKEND_NAMES: Record<string, string> = { webgpu: 'WebGPU', wasm: 'wasm', webgl: 'WebGL' };
+const provider = meta.browser_run.execution_provider;
+const browserBackend = provider ? (BACKEND_NAMES[provider] ?? provider) : 'its default backend';
 
 const cards: LinkCard[] = [
   {
     href: hosts.recap,
-    label: 'Open the demo',
-    body: 'Runs entirely in your browser. Needs WebGPU, and the real policy downloads its ONNX weights on demand — the stub policies need nothing.',
+    label: 'Open the demo standalone',
+    body: 'The same build this page frames, in a full window, with its own explainer underneath. Nothing is downloaded until you ask for the real policy.',
     pending: 'Not deployed yet',
+  },
+  {
+    href: weightsUrl ? weightsUrl.replace(/\/resolve\/[^/]+\/$/, '') : null,
+    label: 'The weights',
+    body: 'The ONNX export the deployed demo fetches, on the Hugging Face Hub. The build pins it by commit rather than by branch, so the page and its weights cannot drift apart.',
+    pending: 'Served from the demo host',
+  },
+  {
+    href: repos.smolvlaRl,
+    label: 'The policy',
+    body: 'SmolVLA with RECAP-style advantage conditioning and classifier-free guidance — the model code behind contribution 01.',
   },
   {
     href: repos.pushtDemo,
     label: 'The source',
     body: 'The demo app, the PushT finetune, the ONNX export, and the parity harnesses that check the browser against Python.',
     pending: 'No public remote yet',
-  },
-  {
-    href: repos.smolvlaRl,
-    label: 'The policy',
-    body: 'SmolVLA with RECAP-style advantage conditioning and classifier-free guidance — the model code behind contribution 01.',
   },
 ];
 ---
@@ -32,24 +69,37 @@ const cards: LinkCard[] = [
   <PageHeader
     eyebrow="Demo · runs in your browser"
     title="SmolVLA + RECAP + guidance, client-side"
-    lead="The policy family from contribution 01, solving PushT with no backend at all: Chipmunk2D physics compiled to WASM, policy inference on WebGPU through onnxruntime-web. Watch it push the T onto the goal, drag the agent away and let the policy recover, and move the guidance weight to see what it changes."
+    lead="The policy family from contribution 01, solving PushT with no backend at all: Chipmunk2D physics compiled to WASM, policy inference on WebGPU through onnxruntime-web. Watch it push the T onto the goal, drag the agent away and let the policy recover, and move the guidance weight to see what it changes — and what it does not."
   />
 
-  <section class="shell pt-8!">
-    <LinkCards cards={cards} />
+  <section class="shell pt-6! pb-2!">
+    <p class="max-w-[70ch] text-[0.85rem] text-grey-3">
+      Everything the frame below prints, and every figure on this page, was measured on
+      <span class="readout">{checkpoint}</span> — the checkpoint the demo serves. They are read
+      from the evaluation outputs rather than copied, so the page cannot go on quoting a policy it
+      has stopped running.
+    </p>
   </section>
+
+  <PushtEmbed />
 
   <section class="shell pt-16!">
     <h3 class="rule mb-6">What you are looking at</h3>
     <div class="grid gap-x-[var(--spacing-pad)] gap-y-6 lg:grid-cols-12">
       <div class="lg:col-span-7">
         <p class="text-grey-4">
-          A PD-controlled agent pushes a rigid T onto a target pose. The policy sees only a 96×96
-          image and its own position, and its action <em>is</em> a target position — sixteen of them
-          per chunk. That last detail is what makes the demo legible: because an action is a
-          position, a sampled action chunk can be drawn straight onto the arena as a trajectory. The
-          fan you see is sixteen independent draws from the flow-matching policy, all conditioned on
-          one frozen observation.
+          A PD-controlled agent pushes a rigid T onto a target pose. The policy sees a 96×96 image
+          <em>and</em> a state vector — its own position plus the eight corners of the T, read
+          straight out of the physics engine. That last part is privileged information a real robot
+          would not have; it is here because it is what this checkpoint was trained with, and
+          because the browser <em>is</em> the simulator, so handing it over is honest in a way it
+          would not be on hardware.
+        </p>
+        <p class="text-grey-4">
+          Its action <em>is</em> a target position — sixteen of them per chunk. That detail is what
+          makes the demo legible: because an action is a position, a sampled action chunk can be
+          drawn straight onto the arena as a trajectory. The fan you see is sixteen independent
+          draws from the flow-matching policy, all conditioned on one frozen observation.
         </p>
         <p class="mb-0 text-grey-4">
           Dragging inside the arena is therefore a valid action, not a special case — take over
@@ -61,22 +111,151 @@ const cards: LinkCard[] = [
       <div class="lg:col-span-5">
         <p class="eyebrow">Worth being precise about</p>
         <p class="text-[0.95rem] text-grey-4">
-          Raising the guidance weight measurably changes what the policy <em>achieves</em>. It does
-          not visibly narrow the fan — the spread of sampled headings is the same at high guidance
-          as at zero. The intuition that guidance collapses a distribution comes from
-          language-conditioned image models and does not carry over to a single advantage token.
+          Guidance does not visibly narrow the fan. The spread of sampled headings is the same at
+          high <i>w</i> as at zero — the intuition that guidance collapses a distribution comes
+          from language-conditioned image models and does not carry over to a single advantage
+          token.
         </p>
-        <p class="mb-0 text-[0.85rem] text-grey-3">
-          The measured numbers are printed next to the demo itself, generated from the same
-          evaluation run that produced its starting states rather than copied by hand.
+        <p class="mb-0 text-[0.95rem] text-grey-4">
+          What the fan does show is how uncertain the policy is at this particular state, which
+          varies a great deal between starting positions. Read it that way rather than as a readout
+          of the slider.
         </p>
       </div>
     </div>
+  </section>
 
-    <p class="mt-10 max-w-[70ch] text-[0.85rem] text-grey-3">
-      The demo is embedded on this page once it is deployed. It stays a separate build on its own
-      URL so it can be opened standalone, and so a page of thesis prose never has to ship alongside
-      half a gigabyte of model weights.
+  <section class="shell pt-16!">
+    <h3 class="rule mb-6">What it actually scores</h3>
+
+    <div class="grid gap-x-[var(--spacing-pad)] gap-y-10 lg:grid-cols-12">
+      <div class="lg:col-span-7">
+        <p class="eyebrow">Guidance weight, {meta.python_run.n} pre-registered starting states</p>
+
+        <ul class="keyterms keyterms-stacked mb-6!">
+          {
+            guidance?.rows.map((r) => (
+              <li>
+                <span class="term">
+                  <i>w</i> = {fmtW(r.w)}
+                  {r.shipped && (
+                    <span class="ml-2 bg-yellow px-1 text-[0.68rem] tracking-[0.08em] text-ink uppercase">
+                      shipped
+                    </span>
+                  )}
+                </span>
+                <span class="readout">{fmt(r.peak)} ± {fmt(r.peakSem)}</span>
+                <span class="text-grey-3">
+                  {' '}
+                  · cleared the bar {r.cleared}/{r.n}
+                  {r.paired && (
+                    <>
+                      {' '}
+                      · paired against the shipped weight, {fmt(r.paired.mean)} ±{' '}
+                      {fmt(r.paired.sem)} ({Math.abs(r.paired.z).toFixed(1)} sem)
+                    </>
+                  )}
+                </span>
+              </li>
+            ))
+          }
+        </ul>
+
+        <p class="max-w-[68ch] text-[0.95rem] text-grey-4">
+          {
+            flat
+              ? `The curve is flat. Nothing in that table is two standard errors from anything else, so the ordering of the point estimates is not a result — it is what a sweep of this size looks like when the control does not move the policy. `
+              : `The differences in that table clear two standard errors, so guidance is doing measurable work on this checkpoint. `
+          }
+          The demo starts at <i>w</i> = {fmtW(meta.cfg_weight)} because that is the weight this
+          policy was measured at and the cheap end of the curve — <i>w</i> of zero or one needs one
+          prefix branch through the model, anything between them needs two. Not because it is a
+          peak.
+        </p>
+        <p class="mb-0 max-w-[68ch] text-[0.85rem] text-grey-3">
+          Scores are best coverage of the target pose divided by PushT's 0.95 success bar. That bar
+          is not one the human demonstrations reach reliably either, so a plain success rate would
+          read as near zero for every policy in this literature — which is why the count of
+          episodes that cleared it is beside each row rather than instead of it.
+          {' '}{Math.round(meta.zero_fraction * 100)}% of starting states are ones this policy makes
+          no progress from at all, and two of those are among the presets in the demo on purpose.
+        </p>
+      </div>
+
+      <div class="lg:col-span-5">
+        {
+          baseline && (
+            <>
+              <p class="eyebrow">The comparison that matters</p>
+              <div class="bracket border border-grey-2 bg-grey-1 p-5">
+                <p class="readout m-0 text-[1.6rem] leading-none">
+                  {fmt(baseline.peak)} <span class="text-grey-3 text-[1rem]">vs</span>{' '}
+                  {fmt(meta.python_run.avg_max_reward)}
+                </p>
+                <p class="mt-3 mb-0 text-[0.9rem] text-grey-4">
+                  {baseline.label} against the policy this page serves, on the same{' '}
+                  {baseline.n} starting states and the same demonstrations. It clears the 0.95 bar{' '}
+                  {baseline.cleared} times to this policy's {shippedCleared}{baseline.paired
+                    ? `, a paired difference of ${fmt(baseline.paired.mean)} ± ${fmt(baseline.paired.sem)} in its favour (${Math.abs(baseline.paired.z).toFixed(1)} sem).`
+                    : '.'}
+                </p>
+                <p class="mt-3 mb-0 text-[0.85rem] text-grey-3">
+                  It trains in minutes. The demo is worth opening for what the policy family does —
+                  language conditioning, advantage conditioning, a chunk you can watch being
+                  denoised — not because it wins PushT. It does not.
+                </p>
+              </div>
+            </>
+          )
+        }
+
+        <p class="eyebrow mt-8">Browser against Python</p>
+        <p class="text-[0.95rem] text-grey-4">
+          On {paired.n} starting states run identically in both, the browser reaches{' '}
+          <span class="readout">{fmt(paired.browser_mean)}</span> against Python's{' '}
+          <span class="readout">{fmt(paired.python_mean)}</span> — {fmt(paired.mean_difference)} ±{' '}
+          {fmt(paired.sem_difference)}, or {parityZ.toFixed(1)} standard errors.
+        </p>
+        <p class="mb-0 text-[0.85rem] text-grey-3">
+          {
+            parityZ < 2
+              ? 'Within noise. '
+              : 'More than sampling alone comfortably explains, and the page says so rather than rounding it away. '
+          }
+          The two sides draw their own denoising noise, so they follow different trajectories from
+          the same start; what is checked exactly is the action chunk itself, which matches
+          Python's to 9e-05 arena pixels on identical inputs. The browser ran on {browserBackend}.
+        </p>
+      </div>
+    </div>
+  </section>
+
+  <section class="shell pt-16!">
+    <h3 class="rule mb-6">The presets in the demo</h3>
+    <p class="mb-8 max-w-[70ch] text-[0.95rem] text-grey-4">
+      The <em>start</em> dropdown is not a random sample. These are six of the evaluated episodes,
+      picked to span the outcomes — including two the policy gets nowhere from — so a couple of
+      minutes with the demo shows the range rather than whichever start the seed happened to give.
+      Each carries the reward that evaluation run actually recorded.
     </p>
+    <ul class="keyterms mb-0!">
+      {
+        scenarios.map((s) => (
+          <li>
+            <span class="term">{s.label}</span>
+            <span>
+              <span class="readout">{fmt(s.browser, 2)}</span>{' '}
+              <span class="text-grey-3">in the browser, {fmt(s.python, 2)} in Python</span>
+              <span class="mt-1 block text-[0.9rem] text-grey-4">{s.note}</span>
+            </span>
+          </li>
+        ))
+      }
+    </ul>
+  </section>
+
+  <section class="shell pt-16! pb-6!">
+    <h3 class="rule mb-6">Elsewhere</h3>
+    <LinkCards cards={cards} />
   </section>
 </Layout>

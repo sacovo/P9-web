@@ -1,0 +1,217 @@
+---
+import { hosts } from '../config';
+import { model, fmtBytes } from '../lib/pusht';
+
+/**
+ * The PushT demo, framed.
+ *
+ * Three things this has to get right, none of them obvious:
+ *
+ * 1. **Click to activate.** The demo starts a physics worker and an inference
+ *    worker the moment it loads, and the real policy pulls a gigabyte and a
+ *    half. Neither should happen because someone scrolled past. The poster
+ *    below is also where the WebGPU precheck belongs — telling a visitor what
+ *    they need *after* the frame has already started is telling them too late.
+ *
+ * 2. **Full bleed, not the page column.** The demo lays its stage out in two
+ *    columns above ~950 px and one column below, so squeezing it into this
+ *    site's 1280 px shell (already inset by the shell's own padding) pushes it
+ *    into the tall single-column layout on screens that did not need it. It
+ *    renders in its own shell inside the frame, so full bleed here still
+ *    produces a centred 1280 px demo — with the width to stay two-column.
+ *
+ * 3. **Height by message, not by guess.** Measured on the live build: 1414 px
+ *    tall at 1024 px wide, 3054 px below ~950 px. No fixed height covers both,
+ *    and an iframe with an inner scrollbar inside a scrolling page is the worst
+ *    of the options. The demo posts its own height (`?embed=1`, see
+ *    `pusht-web-demo/web/src/main.ts`) and this resizes to it. The initial
+ *    height below is only what shows for the frame or two before the first
+ *    message lands, and the fallback if that message never comes at all —
+ *    which is why it is a real number and not zero.
+ */
+
+/** `?embed=1` drops the demo's own title and prose; this page carries both. */
+const src = hosts.recap ? `${hosts.recap}/?embed=1` : null;
+
+/** The same build without the wrapper's query string, for opening on its own. */
+const standalone = hosts.recap;
+
+const download = model ? fmtBytes(model.bytes) : null;
+---
+
+{
+  src && (
+    <section id="demo" class="scroll-mt-20 border-y border-grey-2 bg-grey-1">
+      <div
+        id="pusht-frame"
+        class="relative w-full"
+        data-src={src}
+        data-origin={new URL(src).origin}
+      >
+        {/* The poster. Replaced by the frame on activate, so everything a
+            visitor needs in order to decide is on it. */}
+        <div id="pusht-poster" class="shell py-16!">
+          <div class="grid gap-x-[var(--spacing-pad)] gap-y-8 lg:grid-cols-12">
+            <div class="lg:col-span-7">
+              <p class="eyebrow">Before you start it</p>
+              <h3 class="mt-0 text-[1.5rem] leading-[130%]">
+                The demo runs on your machine, not on ours
+              </h3>
+              <p class="mt-4 mb-0 max-w-[62ch] text-[0.95rem] text-grey-4">
+                Physics, rendering and policy inference all happen in this tab. There is no
+                backend to queue behind and nothing of yours leaves the browser — but it is your
+                hardware doing the work, so it is worth knowing what it is being asked for before
+                the frame starts.
+              </p>
+
+              <button
+                type="button"
+                id="pusht-start"
+                class="btn mt-8"
+                aria-controls="pusht-frame"
+              >
+                Start the demo
+              </button>
+              <p class="mt-3 mb-0 text-[0.8rem] text-grey-3">
+                Nothing loads until you press it.{' '}
+                <a href={standalone!} rel="noopener">
+                  Open it in its own tab
+                </a>{' '}
+                instead, if you would rather have the full window.
+              </p>
+            </div>
+
+            <div class="lg:col-span-5">
+              <p class="eyebrow">Precheck</p>
+              <dl class="m-0 grid gap-0">
+                <div class="border-t border-grey-2 py-3">
+                  <dt class="text-[0.72rem] tracking-[0.08em] text-grey-3 uppercase">
+                    Graphics
+                  </dt>
+                  {/* Server-rendered state is the requirement, not a verdict:
+                      the check needs a browser, and a page that renders "no
+                      WebGPU" before it has looked is wrong for most visitors. */}
+                  <dd id="pusht-gpu" class="m-0 mt-1 text-[0.9rem] text-grey-4">
+                    The real policy wants WebGPU. Checking&hellip;
+                  </dd>
+                </div>
+                <div class="border-t border-grey-2 py-3">
+                  <dt class="text-[0.72rem] tracking-[0.08em] text-grey-3 uppercase">
+                    Download
+                  </dt>
+                  <dd class="m-0 mt-1 text-[0.9rem] text-grey-4">
+                    {download ? (
+                      <>
+                        <span class="readout">{download}</span> of ONNX weights, from the Hugging
+                        Face Hub, and only if you pick the real policy. It is cached afterwards, so
+                        a second visit is quick.
+                      </>
+                    ) : (
+                      <>
+                        The real policy fetches its ONNX weights from the Hugging Face Hub on
+                        demand. They are cached afterwards, so a second visit is quick.
+                      </>
+                    )}
+                  </dd>
+                </div>
+                <div class="border-t border-b border-grey-2 py-3">
+                  <dt class="text-[0.72rem] tracking-[0.08em] text-grey-3 uppercase">
+                    Costs nothing
+                  </dt>
+                  <dd class="m-0 mt-1 text-[0.9rem] text-grey-4">
+                    The stub policy, the physics, the arena and the drag-to-take-over. Enough to
+                    see what the task is before committing to the download.
+                  </dd>
+                </div>
+              </dl>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="shell py-4!">
+        <p class="m-0 text-[0.8rem] text-grey-3">
+          The demo is a separate build on its own origin, embedded here.{' '}
+          <a href={standalone!} rel="noopener">
+            {new URL(src).hostname}
+          </a>{' '}
+          &mdash; so it can be opened standalone, and so a page of thesis prose never ships
+          alongside a gigabyte and a half of model weights.
+        </p>
+      </div>
+    </section>
+  )
+}
+
+{
+  src && (
+    <script>
+      const frame = document.getElementById('pusht-frame');
+      const poster = document.getElementById('pusht-poster');
+      const start = document.getElementById('pusht-start');
+      const gpu = document.getElementById('pusht-gpu');
+
+      if (frame && poster && start && gpu) {
+        const src = frame.dataset.src!;
+        const origin = frame.dataset.origin!;
+
+        // --- precheck ------------------------------------------------------
+        // `navigator.gpu` existing is not the same as an adapter existing —
+        // Linux browsers ship the object behind a flag that yields nothing, and
+        // that case looks identical until you ask. So ask.
+        (async () => {
+          const nav = navigator as Navigator & { gpu?: { requestAdapter(): Promise<unknown> } };
+          if (!nav.gpu) {
+            gpu.textContent =
+              'This browser has no WebGPU. Everything except the real policy still works; ' +
+              'onnxruntime falls back to wasm, where a chunk takes about 19 s instead of about 1.5 s.';
+            return;
+          }
+          try {
+            const adapter = await nav.gpu.requestAdapter();
+            gpu.textContent = adapter
+              ? 'WebGPU is available here. The real policy will run on it.'
+              : 'WebGPU is present but no adapter answered, so the real policy would fall back ' +
+                'to wasm — about 19 s per chunk instead of about 1.5 s.';
+          } catch {
+            gpu.textContent =
+              'WebGPU could not be queried. The demo will pick whatever backend it can get.';
+          }
+        })();
+
+        // --- activate ------------------------------------------------------
+        // The height listener is attached before the frame exists, so the
+        // demo's first message cannot arrive before anything is listening.
+        const initialHeight = () => (window.innerWidth >= 950 ? 1560 : 3120);
+
+        window.addEventListener('message', (event) => {
+          if (event.origin !== origin) return;
+          const data = event.data;
+          if (!data || data.source !== 'pusht-demo' || data.type !== 'height') return;
+          const height = Number(data.height);
+          if (!Number.isFinite(height) || height < 200) return;
+          const iframe = document.getElementById('pusht-iframe');
+          if (iframe) iframe.style.height = `${Math.round(height)}px`;
+        });
+
+        start.addEventListener('click', () => {
+          const iframe = document.createElement('iframe');
+          iframe.id = 'pusht-iframe';
+          iframe.src = src;
+          iframe.title = 'The PushT demo: SmolVLA with advantage conditioning, running in your browser';
+          iframe.className = 'block w-full border-0 bg-paper';
+          iframe.style.height = `${initialHeight()}px`;
+          // Scrolling is left on. Once the height messages arrive the frame is
+          // exactly as tall as its content and no scrollbar appears anyway, and
+          // if they never arrive — an old cached build, a browser that drops
+          // the message — an inner scrollbar is how the visitor still reaches
+          // the bottom of the demo instead of it being clipped.
+          poster.replaceWith(iframe);
+          // Focus follows the click into the frame, so keyboard users land on
+          // the thing they just started rather than back at the top of the page.
+          iframe.addEventListener('load', () => iframe.focus(), { once: true });
+        });
+      }
+    </script>
+  )
+}
