@@ -16,34 +16,44 @@ them.
 
 ## Structure
 
-54 talk slides and 15 backup, in six parts, plus a cover, seven dividers
-and a closing slide — 77 in all. Every slide carries presenter notes, and the notes
+43 talk slides and 15 backup, in five parts, plus a cover, six dividers
+and a closing slide — 66 in all. Every slide carries presenter notes, and the notes
 on the dividers carry a **clock check**: where you should be at that point, and
 what to drop first if you are late.
 
 | Part | Talk slides | Reach it at |
 |---|---:|---:|
-| Opening — the rover, the panel, the questions, the system, ROS2, the stopping layers | 7 | 0 min |
-| 1 — the approach phase: markers, the pooled fit, the error budget | 2 | 6 min |
-| 2 — the policy: SmolVLA, RECAP, SnapFlow, LIBERO, the rollout demo | 19 | 8 min |
-| 3 — real time on the Jetson | 3 | 26 min |
-| 4 — the workflow layer | 8 | 29 min |
-| 5 — the agent, and the fine-tuned local model | 6 | 35 min |
-| 6 — on the rover, the ERC, closing, and the workflow demo | 9 | 41 min |
+| Opening — the rover, the panel, the questions, what P9 adds | 4 | 0 min |
+| 1 — the policy: SmolVLA, RECAP, SnapFlow, LIBERO, the rollout demo | 17 | 5 min |
+| 2 — real time on the Jetson | 2 | 19 min |
+| 3 — the workflow layer | 6 | 22 min |
+| 4 — the agent, and the fine-tuned local model | 6 | 29 min |
+| 5 — on the rover, the ERC, closing, and the demo | 8 | 36 min |
 
 The parts follow the report's contributions rather than the order the system is
-built in, so a reader of the report can map one onto the other. The two pieces
-of supporting work sit in the opening, where the report also puts them: the
-layer map (§2.4) and the four stopping layers (§2.1.4).
+built in, so a reader of the report can map one onto the other. The deck is cut
+to the two contributions the defence is actually about — the policy (parts 1–2)
+and the workflow layer with its agent (parts 3–4). Everything else the report
+contributes is **one slide of bullets in the opening**, *What P9 adds*: the
+approach phase (§3, with its accuracy and its error budget), the four stopping
+layers (§2.1.4), the layer map (§2.4) and the manipulator control. Their numbers
+live in that slide's presenter notes, which are written to be read out as
+answers in the Q&A rather than presented.
 
-The deck is paced for 43 minutes and the live demo at the end is the other
-three, which puts a full run at 46 and **over the 45-minute ceiling**. Two of
-part 2's slides are the reason: the SnapFlow correction and the guidance
-follow-up, added after the report. The correction is not optional — it changes a
-number the report states — so the designated cut is *Can guidance survive
-distillation?*, whose notes say as much. Dropping it returns the talk to 44 with
-the demo and costs no thesis-relevant claim. That is also why the demo sits
-*after* the conclusions: skipping it costs nothing either.
+The deck is paced for about 39 minutes and the live demo at the end is the other
+two, which puts a full run at 41 — **inside the 45-minute ceiling** with room to
+spare, and comfortably so without the demo. The designated cut if a part
+overruns anyway is *Can guidance survive distillation?*, whose notes say as much;
+dropping it costs no thesis-relevant claim, since the SnapFlow correction before
+it carries the one that matters. That is also why the demo sits *after* the
+conclusions: skipping it costs nothing either.
+
+Four slides were dropped whose material survives only in presenter notes, so
+look there rather than for a slide: *Why `long` regresses* (in the LIBERO
+results notes), *The cycle closes* (in the part-2 divider notes), *Mechanical
+tolerance beats control accuracy* (in the tool-change canvas notes), and *The
+same recipe, on the arm* — whose dataset figure moved to *End to end, on the
+arm* in part 5, where the talk is about what actually reached the rover.
 
 Results are deliberately **not** re-created as slides *in the talk*. The
 companion site carries the LIBERO rollouts, the workflow canvases, the datasets
@@ -54,12 +64,21 @@ being reachable from the room.
 
 There are two demos and they sit apart. The **policy** demo plays three LIBERO
 rollouts through `Clip.vue` — one success per suite, from the deck's own
-`public/videos` — and sits inside part 2, straight after the results it
+`public/videos` — and sits inside part 1, straight after the results it
 demonstrates; the results slide links to it with `<Link to="policy-demo">`, so
-the slide carries a `routeAlias`. The **workflow** demo is at the end, on
-`p9.fhnw-rover.ch`: open the gallery first, which renders its canvases from JSON
-and cannot fail in the room, and the live simulated rover at `/demos/rover` only
+the slide carries a `routeAlias`. The **live** demo is a single slide at the end,
+after the conclusions, and it is four **buttons** rather than a description —
+click one and the site opens in a tab. Take the gallery first
+(`/demos/rover/#workflows`), which renders its canvases from JSON and cannot
+fail in the room; the live simulated rover is further up the same page and only
 if the network cooperates. Check the site before the talk.
+
+The buttons are `<a class="demo-btn">` with a `.demo-btn-title` and a
+`.demo-btn-sub` span; `style.css` gives them the styleguide's hoverable card and
+alternates the left rule black/yellow by `:nth-child`. Their targets are real
+routes on the companion site, so they move when it does: `/demos/rover` with the
+`#workflows` and `#drive` anchors, `/demos/pusht`, and `/#libero` on the front
+page.
 
 ## Four ways this file breaks silently
 

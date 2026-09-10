@@ -38,11 +38,17 @@ Autonomous manipulation and workflow automation for the FHNW Mars Rover
 
 <!--
 45 minutes for the talk, 15–20 for questions. The deck is paced for 41 and the
-live demo at the end is the other three, so the ceiling is met with the demo
-and comfortably beaten without it. The clock check on each of the five dividers
+live demo at the end is the other two, so the ceiling is met with the demo and
+comfortably beaten without it. The clock check on each of the five dividers
 says where you should be and what to drop first.
 
-Two things to establish in the first four minutes, because everything else
+The shape: the two contributions the talk is actually about are the policy
+(part 1, with part 2 on making it real time) and the workflow layer (part 3,
+with part 4 on the agent). Part 5 is what reached the rover. Everything else —
+the approach phase, the safety gating, the manipulator control — is one slide
+of bullets at the front, with the numbers in its notes for the questions.
+
+Two things to establish in the first three minutes, because everything else
 hangs off them: this is a rover that has to run whole ordered tasks over a
 delayed link, and the thesis is two systems, not one — a workflow layer that
 decides what happens and when, and a policy that produces the motions it asks
@@ -160,58 +166,6 @@ small hard part, and both had to be built.
 
 ---
 
-# Where this starts
-
-<div class="grid grid-cols-2 gap-12 mt-3">
-<div>
-
-<div class="kicker mb-2">Inherited from P8</div>
-
-- Markers + an EKF for the approach
-- **ACT**, one policy per substep
-- A LeRobot ↔ ROS2 adapter and a recorder
-
-<div class="takeaway mt-5">
-No language. And nothing above the substep.
-</div>
-
-</div>
-<div class="pt-2">
-
-<div class="kicker mb-2">What P9 adds · the procedure</div>
-
-- A **workflow layer** over ROS2 — a task as a canvas
-- An **LLM agent** on the same tools
-
-<div class="kicker mt-5 mb-2">· the motion</div>
-
-- One **language-conditioned policy**, RL post-training
-- **Real time** on the Jetson
-- Depth in the observation; servoing, measured
-
-</div>
-</div>
-
-<!--
-Thirty seconds on the left, a minute on the right.
-
-The honest framing of the left column: P8 worked. It is not that the previous
-project failed. It is that one model per substep does not scale to a panel with
-six kinds of element — every new element is a new dataset and a new training
-run — and that above the substep there was nothing at all: a task was a bespoke
-node someone wrote, and only its author could read it.
-
-On the right, resist explaining any of the five now. The two groups are the map
-for the next forty minutes and they are the two boxes from the previous slide:
-the procedure is parts 3 and 4, the motion is part 2. The talk takes the motion
-first because the procedure is the layer above it.
-
-Plus the manipulator control and the safety gating all five run on — supporting
-work, and the report says so.
--->
-
----
-
 # Three questions
 
 <div class="grid grid-cols-3 gap-8 mt-8 text-sm">
@@ -262,156 +216,95 @@ board. It is on the last-but-two slide too.
 
 ---
 
-# The system, top to bottom
+# What P9 adds
 
-<div class="mt-5 text-base">
+<div class="grid grid-cols-2 gap-10 mt-3">
+<div>
 
-<div class="takeaway py-3"><strong>Operator</strong></div>
+<div class="kicker mb-2">The two halves of the talk</div>
 
-<div class="takeaway py-3 mt-3" style="border-left-color: var(--fhnw-yellow)"><strong>Workflow layer</strong></div>
-
-<div class="grid grid-cols-2 gap-3 mt-3">
-<div class="takeaway py-3"><strong>Approach</strong></div>
-<div class="takeaway py-3"><strong>Manipulation</strong></div>
-</div>
-
-<div class="takeaway warn py-3 mt-3"><strong>Safety gating</strong></div>
-
-<div class="takeaway py-3 mt-3"><strong>Hardware</strong></div>
-
-</div>
-
-<!--
-Thirty seconds, and it is a map rather than an argument. Name the five layers
-downward and do not explain any of them — every one gets its own part.
-
-What each layer is, if you want a clause per box as you point at it:
-
-  · Operator — a form, a canvas, a chat window. No terminal.
-  · Workflow layer — n8n, reaching ROS2 over a rosbridge WebSocket. Parts 4 and 5.
-  · Approach — markers, a pooled PnP fit, an EKF, Cartesian servoing. Part 1.
-  · Manipulation — SmolVLA with RECAP, distilled, on TensorRT engines. Parts 2 and 3.
-  · Safety gating — heartbeat, latching e-stop, hardware stop. The slide after next.
-  · Hardware — the arm, three cameras, the ToF grid, two Jetsons at 20 Hz.
-
-The two things worth stating while it is up:
-
-  1. The layers are separated by INTERFACE, not by convenience. The workflow
-     layer reaches the robot only through ROS2, and nothing crosses two layers
-     at once. That is why an operator can compose a task without knowing what a
-     policy is.
-  2. Nothing above the control loop runs at rate. A workflow step costs about
-     120 ms of n8n overhead and about a second once it waits on a subsystem, so
-     everything at 20 Hz stays in ROS2.
-
-Part 6 is what the whole stack does on the arm. If you are behind the clock,
-this is the slide to cut — every part opens by locating itself anyway.
--->
----
-
-# It all talks over ROS2
-
-<div class="grid grid-cols-5 gap-8 mt-3">
-<div class="col-span-3 flex items-center">
-
-<img src="/figs/mani_overview.svg" class="w-full" />
-
-</div>
-<div class="col-span-2 pt-1">
-
-<div class="kicker mb-2">Three ways a node is reached</div>
-
-| | |
-|---|---|
-| **Topic** | a stream, no reply — camera frames, joint states, the heartbeat |
-| **Service** | one request, one response — `move_to_joint_positions` |
-| **Action** | long-running and **cancellable**, streams feedback, ends with a result |
-
-<div class="takeaway mt-4">
-Both phases are actions: <code>align_to_target</code> and <code>run_policy</code>.
-</div>
-
-</div>
-</div>
-
-<!--
-A minute. Two jobs: introduce ROS2 as the middleware everything below the
-workflow layer speaks, and introduce the three interface kinds, because the
-rest of the talk leans on the distinction and not everyone in the room uses
-ROS2.
-
-The distinction that matters later, in one sentence each:
-
-  · A topic is a stream with no delivery confirmation. That is why the drill
-    setpoints in part 4 had to be moved off topics and onto services — messages
-    were occasionally lost and the workflow carried on as if they had landed.
-  · A service confirms receipt, so it is what a command that SETS STATE uses.
-  · An action is the only one that can be cancelled, report progress while it
-    runs, and end with a terminal result — completed, timeout, cancelled, or
-    aborted. That terminal result is what lets the workflow layer branch on how
-    a phase ended, and it is the top of the four stopping layers on the next
-    slide.
-
-On the figure: blue is the operator's manual path from the SpaceMouse, orange
-the two autonomous paths and the orchestration that starts them, grey the
-sensors and the hardware. The dashed box has one role per side — observations
-from the left, goals from the top, safety from the bottom, commands out to the
-right.
-
-One detail worth having: only one ros2_control controller may be active at a
-time, so the hand-off between the phases is an acquire/release inside the
-actions themselves rather than an external sequencer. A node that has not
-claimed its controller cannot move the arm at all.
--->
----
-
-# Safety: four ways to stop
-
-<p class="note mt-2 mb-1">Top to bottom: from trusting the full software stack
-to independent of it.</p>
-
-| | trigger | effect |
-|---|:---|:---|
-| Action cancel | the running goal is cancelled | the phase ends cleanly, the stack stays live |
-| Operator heartbeat | silence on `/policy_control/heartbeat` for 0.5 s | commanding pauses, the arm holds, the goal waits |
-| Software e-stop | any message on `/e_stop` | goals aborted, new ones **rejected until reset** |
-| Hardware e-stop | a physical switch | all electronics down, holding torque lost |
-
-<div class="grid grid-cols-2 gap-8 mt-6 text-sm">
 <div class="takeaway">
-The heartbeat is the one that acts on <strong>nothing happening</strong>: a lost
-link stops motion with nobody deciding to.
+<strong>One language-conditioned policy</strong> instead of one model per
+substep — SmolVLA, RL post-training with RECAP, distilled to a single step and
+real time on the Jetson.
 </div>
-<div class="takeaway warn">
-The e-stop <strong>latches</strong>. That is what makes it a stop and not a
-pause.
+
+<div class="takeaway warn mt-4">
+<strong>A workflow layer over ROS2</strong> — a task as a canvas an operator can
+read, and an <strong>LLM agent</strong> on the same nodes.
+</div>
+
+</div>
+<div class="text-sm">
+
+<div class="kicker mb-2">Built underneath, and in the report</div>
+
+- **The approach phase**, reimplemented in C++ — markers, a pooled PnP fit, an
+  EKF and Cartesian servoing place the gripper to **18.1 mm** median against a
+  ±25 mm requirement
+- **Safety gating** — action cancel, an operator heartbeat, a *latching*
+  software e-stop, the hardware stop
+- **Manipulator control** at 20 Hz, and depth in the observation
+
+<p class="note mt-4">
+Everything above the control loop reaches the robot only through ROS2 — topics,
+services and cancellable actions. Both phases are actions.
+</p>
+
 </div>
 </div>
 
 <!--
-The layers differ in what they leave running and how they resume, which is the
-whole content of the figure. The upper three all hold the arm in position under
-its controllers; only the hardware stop drops holding torque and needs a
-reboot and a homing run.
+Two minutes, and it is a map rather than an argument. This slide replaces the
+architecture walk-through and the whole approach-phase part; say the two boxes
+on the left, name the three on the right, and move.
 
-The design decision worth defending: the heartbeat is an ABSENCE-detector, not
-a command. A crashed operator interface, a dead Wi-Fi link and an operator who
-walked away all produce the same safe outcome, and none of them require anyone
-to press anything. That is the sub-second requirement from the ERC rules.
+Inherited from P8: markers and an EKF for the approach, per-task ACT policies, a
+LeRobot <-> ROS2 adapter and a recorder. No language, and nothing above the
+substep — a task was a bespoke node someone wrote, and only its author could
+read it. That is what the two boxes on the left replace.
 
-Deliberately NOT gated: a move to a joint configuration taught beforehand. It
-is fully determined before it starts and is released by a human through a form,
-so it is not autonomous in the sense the safety section defines. Say this
-before someone catches it — the tool change in part 3 runs entirely on such
-moves.
+THE STACK, if you want a clause per layer: operator (a form, a canvas, a chat
+window — no terminal); workflow layer (n8n over a rosbridge WebSocket);
+approach and manipulation side by side; safety gating; hardware. The layers are
+separated by INTERFACE, not by convenience, and nothing above the control loop
+runs at rate — a workflow step costs about 120 ms and about a second once it
+waits on a subsystem, so everything at 20 Hz stays in ROS2.
 
-All three software layers were exercised on the running rover.
+THE APPROACH PHASE, for the advisor, whose field this is. Markers fix the BOARD,
+forward kinematics carries the GRIPPER; no marker has to be visible at the
+working pose. One square marker admits two poses — marker 88 alone gives two
+tool frames 129 degrees apart, reprojecting at 0.68 and 0.70 pixels, and the one
+OpenCV calls better is 65 mm from the truth. Pool two markers into a single
+solvePnP over eight points and the ambiguity disappears. Stored registration:
+18.1 mm median, 83 %. Own recording: 14.9 mm, 12 of 12. Why 25 mm: from that
+close the switch to be turned is unambiguous in the gripper cameras, so the
+policy manipulates ONE switch rather than choosing among five neighbours. The
+C++ rewrite took the control cycle from 964 to 59 microseconds and the tail from
+3.7 ms to 159 microseconds.
 
-What the table leaves out, and you have ready: RECOVERY. Action cancel — the
-next goal can start immediately. Heartbeat — automatic when it returns, and
-after 5 s the buffered trajectory is flushed. Software e-stop — a message on
-/e_stop/reset. Hardware e-stop — power-up, stack restart, and an encoder check
-before it leaves read-only.
+THE ERROR BUDGET, if asked, over 1411 still frames at thirty holds across eleven
+stations: random frame-to-frame scatter is 1.49 mm median and 0.33 mm averaged
+over twenty frames; what is left after fitting one rigid camera-to-base
+transform and one rigid tool offset is 10.87 mm. So the systematic part is about
+seven times the random one, and it grows with reach — vision reads 15 to 20 per
+cent less reach displacement than forward kinematics. Ruled out: lens distortion
+(1.05 mm), principal point, image position, wrist attitude, joint zeros,
+monocular scale. Characterised rather than attributed: reach and camera range
+correlate at 0.97 and the two candidate directions are 7.9 degrees apart. The
+decisive experiment is a second rover-fixed camera seeing the same markers,
+which the rover already carries. And the reference is soft too — three of the
+detector's switch positions move 5.0 to 8.5 mm between recordings.
+
+SAFETY, if asked. The four layers differ in what they leave running: the upper
+three hold the arm under its controllers, only the hardware stop drops holding
+torque. The heartbeat is an ABSENCE-detector, not a command — a crashed
+interface, a dead link and an operator who walked away all produce the same safe
+outcome, sub-second, with nobody deciding to. The e-stop LATCHES: new goals are
+rejected until a message on /e_stop/reset. Deliberately NOT gated: a move to a
+joint configuration taught beforehand, released by a human through a form — the
+tool change in part 3 runs entirely on such moves. All three software layers
+were exercised on the running rover.
 -->
 
 ---
@@ -420,165 +313,6 @@ layout: section
 
 <div class="kicker mb-4">Part 1</div>
 
-# The approach phase
-
-<p class="mt-4 text-lg">
-Placing the gripper, and knowing how well
-</p>
-
-<!--
-Clock check: minute 6 of 46. Two slides, two minutes.
-
-This is a contribution rather than scaffolding — the classical half of a
-substep, reimplemented in C++, and the one part of the work measured end to end
-against a requirement it either meets or does not.
-
-It is also the advisor's own field, so the second slide is the one to protect
-if you are late: the headline accuracy is on the first, but where the error
-comes from is what he will ask about.
--->
-
----
-
-# How the gripper is placed
-
-<div class="grid grid-cols-5 gap-8 mt-3">
-<div class="col-span-2 pt-2">
-
-Markers fix the **board**. Forward kinematics carries the **gripper**. No marker
-has to be visible at the working pose.
-
-<table class="mt-3">
-<tbody>
-<tr><td>Requirement</td><td>±25 mm in the panel plane</td></tr>
-<tr><td>Stored registration</td><td><strong>18.1 mm</strong> median, 83 %</td></tr>
-<tr><td>Own recording</td><td>14.9 mm, 12 / 12</td></tr>
-</tbody>
-</table>
-
-<div class="takeaway warn mt-4">
-One square marker admits <strong>two</strong> poses. Pool two into one fit and
-the second disappears.
-</div>
-
-</div>
-<div class="col-span-3 flex items-center">
-
-<img src="/figs/pnp_ambiguity.png" class="w-full" />
-
-</div>
-</div>
-
-<!--
-The figure is one real frame from the base camera. Panel (a): marker 88 solved
-on its own gives two tool frames 129 degrees apart, reprojecting at 0.68 and
-0.70 pixels — the reprojection error genuinely cannot choose, and the one
-OpenCV reports as better is 65 mm from the truth. Panel (b) is both markers
-pooled into a single solvePnP over eight points.
-
-Why 25 mm: from that close, the switch to be turned is unambiguous in the
-gripper cameras, so the policy manipulates ONE switch rather than choosing
-among five neighbours.
-
-The architectural point, if there is time for one: we deliberately do not track
-the gripper by vision during the task. A base camera loses the gripper markers
-at exactly the poses where precision matters. So the camera-to-base transform
-is solved once from a dedicated wiggle recording and stored, and forward
-kinematics carries the tool from there. That works because the kinematic chain
-was fitted and is true to about a centimetre — the vision estimate is the part
-that degrades with reach, not the arm.
-
-Also reimplemented in C++: the whole control cycle went from 964 to 59
-microseconds, and the tail from 3.7 ms to 159 microseconds. That matters on a
-Jetson that is already busy, not because Python was too slow in isolation.
-
-THE ERROR BUDGET, if you are asked before the next slide — or if you had to
-skip it. The residual separates into two parts that behave differently, over
-1411 still frames at thirty holds across eleven stations:
-
-  · random — frame-to-frame scatter with the arm stationary is 1.49 mm at the
-    median, and averaging twenty frames takes it to 0.33 mm;
-  · systematic — what is left after fitting one rigid camera-to-base transform
-    and one rigid tool offset to every hold is 10.87 mm.
-
-So the systematic part is about seven times the random one, which is the number
-that decides where effort is worth spending: temporal fusion, a longer filter
-and a pose graph all attack the half that is already small.
-
-It grows with reach — vision reads 15 to 20 per cent less reach displacement
-than forward kinematics — and it is characterised rather than attributed. Lens
-distortion is ruled out (zeroing it moves the pose 1.05 mm), as are the
-principal point, image position, wrist attitude, joint zeros and a monocular
-scale error. What cannot be separated in this recording is camera-side from
-arm-side: reach and camera range correlate at 0.97 and the two candidate
-directions are 7.9 degrees apart. The decisive experiment is a second
-rover-fixed camera seeing the same markers, which the rover already carries.
--->
-
----
-
-# Targeting: where the error actually is
-
-<div class="grid grid-cols-2 gap-10 mt-4">
-<div>
-
-| | median | p90 |
-|---|---:|---:|
-| Frame-to-frame scatter | 1.49 mm | 3.52 mm |
-| …averaged over 20 frames | 0.33 mm | — |
-| After one rigid camera→base and one tool offset | 10.87 mm | 17.19 mm |
-
-<div class="takeaway mt-5">
-The systematic part is about <strong>seven times</strong> the random part.
-</div>
-
-</div>
-<div class="pt-2">
-
-<div class="kicker mb-2">Ruled out</div>
-
-Lens distortion (1.05 mm), principal point, image position, wrist attitude,
-joint zeros, monocular scale.
-
-<div class="kicker mb-2 mt-5">What survives</div>
-
-Vision reads **15–20 % less** reach displacement than the kinematics.
-
-<div class="takeaway warn mt-5">
-Characterised, not attributed: reach and camera range correlate at
-<strong>0.97</strong>.
-</div>
-
-</div>
-</div>
-
-<!--
-This is the slide for "how good is your calibration, really", and it answers it
-before it is asked. The headline figure is on the slide before this one; this is
-the decomposition behind it. Two minutes at most — the same material is in the
-previous slide's notes if you have to drop this one for time.
-
-The order to say it in: the random part is already negligible and averaging
-kills it. What is left is systematic and it grows with reach. Then the list of
-things it is NOT, which is the part that took the time.
-
-The decisive experiment, if asked: a second rover-fixed camera seeing the same
-markers, which separates camera-side from arm-side because it breaks the
-correlation. The rover already carries one — its view of the markers has not
-been checked.
-
-Also have ready: the reference is soft too. Errors are scored against the
-object detector's switch positions, and three of those move 5.0 to 8.5 mm
-between recordings. Several millimetres of the budget is the reference rather
-than the gripper chain, and settling that needs an externally surveyed panel.
--->
-
----
-layout: section
----
-
-<div class="kicker mb-4">Part 2</div>
-
 # The policy
 
 <p class="mt-4 text-lg">
@@ -586,19 +320,18 @@ One model, an instruction, and its own experience
 </p>
 
 <!--
-Clock check: minute 8 of 46. If you are past 10, cut the FAST half of the
+Clock check: minute 5 of 45. If you are past 7, cut the FAST half of the
 knowledge-insulation slide.
 
-This part is fifteen slides and it is the technical core. Budget 16 minutes.
+This part is thirteen slides and it is the technical core. Budget 14 minutes.
 The order is: what the model is (3 slides), why imitation is not enough (1),
-RECAP (4), distillation (1), what came out (6, the last two being the SnapFlow
-correction and the guidance follow-up). Making it *fast* is part 3 and is no
+RECAP (4), distillation (1), what came out (4, the last two being the SnapFlow
+correction and the guidance follow-up). Making it *fast* is part 2 and is no
 longer in here.
 
-The two added slides are what pushes the talk from 44 to 46, over the ceiling.
 "Can guidance survive distillation?" is the designated cut and its notes say so:
-dropping it returns you to 44 and costs no thesis-relevant claim, since the
-correction slide before it carries the one that matters.
+dropping it costs no thesis-relevant claim, since the correction slide before it
+carries the one that matters.
 -->
 
 ---
@@ -666,7 +399,7 @@ different config. Say so if anyone reads the boxes closely.
 <img src="/figs/vla_architecture.svg" class="h-[430px] mx-auto mt-2" />
 
 <!--
-This diagram is the report's, and it carries the whole of part 2 in one
+This diagram is the report's, and it carries the whole of part 1 in one
 picture: the prefix on the left, the backbone, the expert on the right, the two
 losses at the bottom, the red stop-gradient line between them, and the critic
 in panel (b).
@@ -765,7 +498,7 @@ pipeline.
 <div class="mt-8">
 <p class="note text-center">
 The expensive half runs <strong>once</strong>; the cheap half runs ten times.
-That split is what makes the export in part 3 possible at all.
+That split is what makes the export in part 2 possible at all.
 </p>
 </div>
 
@@ -776,7 +509,7 @@ four sentences and do not stop anywhere.
   · The observation is three camera images, the joint state with the depth grid,
     and the instruction.
   · The VLM reads all of that ONCE and leaves a cache behind. This is about 95
-    per cent of the cost of a chunk, and part 3 is entirely about it.
+    per cent of the cost of a chunk, and part 2 is entirely about it.
   · The action expert starts from noise and asks, ten times, "which way should
     this chunk move" — each pass a single velocity estimate, each one reading
     the same cache.
@@ -784,7 +517,7 @@ four sentences and do not stop anywhere.
     sentence.
 
 The two questions this pre-empts: why the policy is split into a prefix and a
-suffix engine (part 3), and why the ten steps can be distilled into one without
+suffix engine (part 2), and why the ten steps can be distilled into one without
 touching the expensive half.
 -->
 ---
@@ -1037,8 +770,8 @@ blue one is v_pos, and the black one is what actually gets integrated. Its tip
 slides along the dashed line as w moves — inside the segment is interpolation,
 past the blue tip is extrapolation, and the line turns yellow there.
 
-This is the mechanism behind the f-plus result two slides into part 3 of the
-results. If the labels are wrong, v_pos - v_unc points away from behaviour the
+This is the mechanism behind the f-plus result on the last slide of this
+part. If the labels are wrong, v_pos - v_unc points away from behaviour the
 task needs, and every one of these arrows is then pointing the wrong way, in
 proportion to w. Say that here so the sweep on that slide is already familiar.
 
@@ -1115,18 +848,22 @@ DROPPABLE: the right-hand column. The left half is the load-bearing part.
 
 # SnapFlow: ten steps into one
 
+<div class="snapflow-loss mt-1">
+
+$$\mathcal{L} = \underbrace{\bigl\lVert f_\theta^{\,\tau\to\tau'} - \mathrm{sg}\bigl[f_\theta^{\,\text{2 half-steps}}\bigr]\bigr\rVert^2}_{\text{consistency}} \;+\; \underbrace{\bigl\lVert v_\theta - (A-\epsilon) \bigr\rVert^2}_{\text{flow matching}}$$
+
+</div>
+
 <div class="grid grid-cols-5 gap-8 mt-3">
 <div class="col-span-2 pt-1">
 
 Ten Euler steps distilled into a **single time-conditioned jump**, with the
 model as its own teacher.
 
-$$\mathcal{L} = \underbrace{\bigl\lVert f_\theta^{\,\tau\to\tau'} - \mathrm{sg}\bigl[f_\theta^{\,\text{2 half-steps}}\bigr]\bigr\rVert^2}_{\text{consistency}} \;+\; \underbrace{\bigl\lVert v_\theta - (A-\epsilon) \bigr\rVert^2}_{\text{flow matching}}$$
-
 <p class="note mt-3">A second time input <em>s</em> through an MLP initialised to
 zeros, so the student starts as its teacher.</p>
 
-<div class="takeaway warn mt-3 text-sm">
+<div class="takeaway warn mt-4 text-sm">
 Two half-steps beat one whole, so the teacher is always slightly ahead — and
 improves with the student.
 </div>
@@ -1134,7 +871,7 @@ improves with the student.
 </div>
 <div class="col-span-3 flex justify-center pt-1">
 
-<SnapFlow :width="498" :height="300" />
+<SnapFlow :width="498" :height="288" />
 
 </div>
 </div>
@@ -1305,6 +1042,21 @@ Claim 1: +5 to +11 per suite. That is the pre-training RECIPE, not the RL part.
 Claim 2: rollout post-training transfers to a 450M model on the short-horizon
          suites, and makes `long` WORSE — 35.8 against 41.6.
 Claim 3: 68.1 against 62.9 for the base, 55.3 without insulation.
+
+WHY `long` REGRESSES, since that slide is no longer in the deck and claim 2 is
+incomplete without it. Rollout post-training amplifies the quality of the
+rollouts you feed it. Base-policy success per suite stands in for rollout
+quality — the rollouts were collected by exactly that policy, 600 episodes,
+64.3 % overall. On spatial and goal, three quarters of episodes succeed, so
+there is plenty of good behaviour to reinforce and it helps. On `long`, most
+rollouts fail, so even the positively labelled frames come from mediocre
+behaviour, and the policy falls below where it started. The base policy never
+opens a drawer, so its rollouts contain no positive drawer example to
+reinforce — that skill can only come back from the DEMONSTRATIONS, which is the
+role human corrections play in the original recipe, filled here by data already
+on disk. The paired clips are on the companion site under LIBERO rollouts,
+alongside a third pair where co-training LOSES a skill the rollouts taught.
+Specialisation runs in both directions.
 
 The asterisk is yours to explain, and better volunteered than waited for. The
 SnapFlow row is the only one that moved: the report's 66.1 measured the
@@ -1479,66 +1231,6 @@ magnitude, at 12 states, 32 noise draws each.
 
 ---
 
-# Why `long` regresses, and what fixes it
-
-<div class="grid grid-cols-5 gap-8 mt-3">
-<div class="col-span-3">
-
-<img src="/figs/fig_long_regress.png" class="w-[88%] mx-auto" />
-
-<div class="grid grid-cols-2 gap-4 mt-3 w-[72%] mx-auto">
-  <Clip src="250k_goalT0_drawer_FAIL_ep0" verdict="fail" label="base policy" />
-  <Clip src="cotrain_goalT0_drawer_SUCCESS_ep0" verdict="success" label="co-trained" />
-</div>
-
-</div>
-<div class="col-span-2 pt-2">
-
-<div class="takeaway warn">
-Rollout post-training <strong>amplifies the quality of the rollouts you feed
-it</strong>. Where most of them fail, even the positives come from mediocre
-behaviour.
-</div>
-
-<div class="takeaway mt-5">
-The base policy never opens a drawer, so its rollouts contain no positive
-drawer example to reinforce. That skill can only come back from the
-<strong>demonstrations</strong>.
-</div>
-
-<p class="note mt-4">
-Which is the role human corrections play in the original recipe — filled here
-by data that was already on disk.
-</p>
-
-</div>
-</div>
-
-<!--
-This is the slide the policy half of the thesis is built around. Take the time,
-and let the clips loop while you talk.
-
-Left panel: base-policy success per suite, used as a stand-in for rollout
-quality, since the rollouts were collected by exactly that policy. Say
-"stand-in", not "measurement" — per-suite rollout success was not logged
-separately. 600 episodes, 64.3 % overall.
-
-The chain: spatial and goal, three quarters of episodes succeed, plenty of good
-behaviour to reinforce, it helps. On `long`, most rollouts fail, so even the
-positively labelled frames come from mediocre behaviour, and the policy falls
-below where it started.
-
-Then the clips, which are the same statement from the other side. Same task,
-same instruction, same 450M architecture. The only difference is whether
-demonstrations were mixed back into fine-tuning.
-
-Both are on the companion site under LIBERO rollouts, alongside a third pair
-where co-training LOSES a skill the rollouts taught. Specialisation runs in
-both directions.
--->
-
----
-
 # f⁺ decides what “negative” means
 
 <div class="grid grid-cols-2 gap-8 mt-3">
@@ -1621,8 +1313,9 @@ per-task ACT models, and it is visible here in a way a table cannot show.
 
 If someone asks whether these are cherry-picked: yes, in that they are
 successes. The rates behind them are on the LIBERO slide — 80.0, 86.2 and 38.2
-per cent — and the failure that matters, the two-subgoal task, is on the
-`long` regression slide with its own clip.
+per cent — and the failure that matters is the two-subgoal task, where rollout
+post-training makes things worse and only demonstrations repair it. The paired
+clips for that are on the companion site, not in the deck.
 
 Do not run this from the website. The clips are in the deck and loop silently
 on their own; opening a browser here costs a minute and buys nothing. The
@@ -1630,59 +1323,10 @@ workflow demo is still at the end, after the conclusions.
 -->
 
 ---
-
-# The same recipe, on the arm
-
-<div class="grid grid-cols-5 gap-8 mt-2">
-<div class="col-span-3">
-
-<img src="/figs/rover_dataset_sample.png" class="w-full" />
-
-</div>
-<div class="col-span-2 pt-1">
-
-<div class="kicker mb-2">Four datasets, 20 Hz, on the Hub</div>
-
-<table>
-<tbody>
-<tr><td>black switch</td><td>83</td></tr>
-<tr><td>red switch</td><td>24</td></tr>
-<tr><td>lever switch</td><td>11</td></tr>
-<tr><td>four instructions</td><td>120</td></tr>
-</tbody>
-</table>
-
-</div>
-</div>
-
-<!--
-One episode of the panel-switch dataset: five camera frames along the top, the
-six joints measured against commanded in the middle, the gripper at the bottom.
-The demonstration opens the jaws, holds them while the arm settles, closes at
-7.5 s, turns the switch with the wrist roll, backs off at 13.5 s.
-
-Say what the pipeline actually is, because it is the deliverable: bags recorded
-in the field, episode boundaries and task strings set in an annotation GUI,
-converted offline into a LeRobot dataset with the same converters the live
-system uses. So a recorded frame and a live observation have identical layout
-by construction. Nothing has to be kept in step by hand.
-
-Then the concession, and make it plainly. What the arm inherits from this
-contribution is the ARCHITECTURE and advantage conditioning, not the RECAP loop
-that produces the gain. The gain was measured on LIBERO, on a different robot,
-a different dataset and a different observation layout. The rover policy is
-pre-trained on a public UR5 dataset for 120k steps and fine-tuned on those
-recordings for 30k.
-
-The datasets are public under `fhnwrover` on the Hugging Face Hub, and the
-companion site links a browser for them.
--->
-
----
 layout: section
 ---
 
-<div class="kicker mb-4">Part 3</div>
+<div class="kicker mb-4">Part 2</div>
 
 # Real time on the Jetson
 
@@ -1691,15 +1335,25 @@ Getting one chunk from 1357 ms to 330
 </p>
 
 <!--
-Clock check: minute 24 of 46. Two slides, two minutes.
+Clock check: minute 19 of 45. Two slides, three minutes.
 
 This is its own contribution in the report and it is the one an engineer in the
 room will want. The arc is two sentences: the policy as trained does not fit
 the control cycle at all, and what makes it fit is an export path plus a
 precision that had to be discovered rather than chosen.
 
-If you are past 24, say the second sentence and go straight to the cycle
-budget — that slide carries the claim on its own.
+WHY IT HAD TO BE FAST, since the cycle-budget slide is no longer in the deck:
+the controller replays a chunk while computing the next one, so the publisher
+keeps draining the queue during the forward pass, and the leading actions of a
+new chunk describe a moment that has already passed. A chunk of n actions
+costing c delivers n - c/dt of them. The bound is c <= n*dt/2, which at fifty
+actions is 1250 ms — and eager FP32, at 1357 ms, misses it: it consumes 27 of
+its 50 actions before the chunk lands, loses four on every re-plan, and the
+queue runs dry. No queue depth fixes that. On the deployed engine the same
+amortisation is 43 of 50 actions and 8 ms, and the cycle closes at 30 of 50 ms,
+the largest item being the JPEG decode of three camera streams at 15 ms.
+
+If you are past 21, say those two sentences over the engine table and move on.
 -->
 
 ---
@@ -1796,74 +1450,24 @@ rather than at half precision.
 -->
 
 ---
-
-# The cycle closes
-
-<img src="/figs/cycle_budget.png" class="w-[64%] mx-auto mt-1" />
-
-<div class="grid grid-cols-3 gap-6 mt-3 text-sm">
-<div class="takeaway warn">
-Eager: <strong>1357 ms</strong> a chunk. The queue drains.
-</div>
-<div class="takeaway">
-Deployed: <strong>330 ms</strong> — <strong>4.1×</strong>.
-</div>
-<div class="takeaway">
-The cycle closes at <strong>30 of 50 ms</strong>.
-</div>
-</div>
-
-<!--
-This is the slide that says the acceleration was NECESSARY, not merely nice.
-
-The arithmetic, which is the interesting bit and not obvious: the controller
-replays a chunk while computing the next one, so the publisher keeps draining
-the queue during the forward pass. The leading actions of a new chunk describe
-a moment that has already passed, and are discarded. A chunk of n actions
-costing c delivers n − c/Δt of them.
-
-So the eager path consumes 27 of its 50 actions before the chunk lands and
-returns 23. It loses four actions on every re-plan until the queue runs dry.
-No queue depth fixes that — a deeper queue only postpones the first stall. The
-bound is c ≤ n·Δt/2, which at fifty actions is 1250 ms, and eager FP32 misses
-it.
-
-On the deployed engine the same amortisation is 43 of 50 actions and 8 ms.
-The largest item in the cycle is then the JPEG decode of three camera streams
-at 15 ms — the ROS-side work is the floor of this budget, whichever policy is
-loaded.
-
-Caveats, volunteered: the benchmark has the Jetson to itself, and the budget
-holds no progress tracker yet. Two fifths of the cycle is spare, so neither
-puts the engine path at risk.
-
-One more saving worth a sentence if there is time: only one tick in ten
-actually feeds a forward pass, and the rest decoded three camera frames and
-threw them away. A frame gate returned 0.84 of a CPU core to the rest of the
-stack.
--->
-
----
 layout: section
 ---
 
-<div class="kicker mb-3">Part 4</div>
+<div class="kicker mb-4">Part 3</div>
 
 # The workflow layer
 
-<p class="mt-2 text-lg mb-5">
+<p class="mt-4 text-lg">
 A task an operator can read off a canvas
 </p>
 
-<img src="/img/n8n_battery_check.png" class="w-full max-w-[820px] mx-auto border border-[#deded9] bg-white" />
-
 <!--
-Clock check: minute 26 of 46.
+Clock check: minute 22 of 45.
 
-Under 22 means you rushed part 2. Past 27, drop the "what n8n is not" slide and
+Under 19 means you rushed part 1. Past 24, drop the "what n8n is not" slide and
 compress the tool change into one sentence on the maintenance slide.
 
-Parts 4 and 5 are twelve slides in 14 minutes. They are less mathematical and
+Parts 3 and 4 are thirteen slides in 14 minutes. They are less mathematical and
 they will move faster than you expect.
 -->
 
@@ -1871,40 +1475,35 @@ they will move faster than you expect.
 
 # Why a workflow layer at all
 
-<div class="grid grid-cols-2 gap-12 mt-4">
+<div class="grid grid-cols-2 gap-12 mt-3 text-sm">
 <div>
 
 <div class="kicker mb-2">The problem</div>
 
 - ERC tasks have a **prescribed order**, and operators under pressure forget steps
-- A task is a sequence of ROS2 calls with branches, waits and confirmations —
-  not a control problem
+- A task is ROS2 calls with branches, waits and confirmations — **not a control
+  problem**
 - The people who run the rover are **not all programmers**
 
-<div class="takeaway warn mt-5">
-Writing one bespoke sequencer node per task is how this normally goes. Then
-every change is a rebuild, and only its author can read it.
 </div>
-
-</div>
-<div class="pt-2">
+<div>
 
 <div class="kicker mb-2">The choice</div>
 
-**n8n** — an open-source workflow automation tool — bridged to ROS2 over a
-rosbridge WebSocket.
+<div class="takeaway warn">
+<strong>n8n</strong>, bridged to ROS2 over a rosbridge WebSocket. Topics,
+services and actions become drag-and-drop nodes — and the <em>same</em> nodes
+are tools for an LLM agent.
+</div>
 
-- ROS2 topics, services and actions become **drag-and-drop nodes**
-- The same nodes are **tools for an LLM agent**, so one integration serves both
-- And it already speaks to everything else: an issue tracker, a chat system, a
-  spreadsheet
-
-<p class="note mt-4">
-Packaged as a community node package, <code>@fhnw-rover/n8n-nodes-ros2</code>.
+<p class="note mt-2">
+A community node package, <code>@fhnw-rover/n8n-nodes-ros2</code>.
 </p>
 
 </div>
 </div>
+
+<img src="/img/n8n_battery_check.png" class="w-full border border-[#deded9] bg-white mt-5" />
 
 <!--
 The framing that lands with a robotics audience: this is not a replacement for
@@ -1912,13 +1511,18 @@ ROS2. It is the layer ABOVE the control loop — sequencing substeps, setting
 parameters, reading measurements back, and connecting the robot to things that
 are not robots.
 
+Writing one bespoke sequencer node per task is how this normally goes. Then
+every change is a rebuild, and only its author can read it.
+
 The single-integration argument is the one I would defend hardest. MCP and
 "skills" were both considered. The reason for neither is that an n8n node can
 be dragged onto a canvas by a human OR called as a tool by an agent, from the
 same definition. Two interfaces would have meant two things to keep in step.
 
-The breadth argument gets its evidence two slides on: a battery warning that
-raises a task in Asana from a ROS2 topic, in ten nodes and no code.
+The canvas on the slide is the breadth argument in advance — a battery warning
+that raises a task in Asana from a ROS2 topic, ten nodes and no code. It comes
+back with its numbers four slides on; here it is just what a workflow LOOKS
+like, and the point is that an operator can read it.
 -->
 
 ---
@@ -1981,37 +1585,29 @@ two are merged. The rover runs a fork until they are released.
 <div class="grid grid-cols-2 gap-12 mt-4">
 <div>
 
-**87 nodes**, one loop per substep, repeated until the operator reports that
-substep done. Before every loop it offers a switch back to manual.
+**87 nodes** — one loop per substep, repeated until the operator reports that
+substep done:
 
-<div class="takeaway mt-4">
+1. the detector returns the candidate elements of **one type**
+2. the operator picks one from a dropdown
+3. the arm **aligns**
+4. the **policy** runs
+5. the operator confirms the outcome
+
+<p class="note mt-3">Before every loop it offers a switch back to manual.</p>
+
+</div>
+<div class="pt-2">
+
+<div class="takeaway">
 Two substeps break the pattern. Both have a <em>fixed</em> target, so there is
 nothing to detect or select — and the plug needs a different tool, so it calls
 the tool-change workflow twice.
 </div>
 
-<p class="note mt-4">
+<p class="note mt-5">
 Run on the rover. Substeps whose policies exist run their loops; the rest are
 wired and performed by hand.
-</p>
-
-</div>
-<div class="pt-1">
-
-<div class="kicker mb-2">One rule I did not expect to have to learn</div>
-
-Where a node has two outgoing connections, execution is depth-first and the
-**upper branch on the canvas runs first**.
-
-<div class="takeaway warn mt-4">
-So a node's vertical position is part of the program. The nodes that return the
-beacon and the SpaceMouse to autonomous mode sit <em>above</em> the branch that
-starts the next substep — below it, the next substep would begin while the arm
-was still under manual control.
-</div>
-
-<p class="note mt-4">
-Moving a node for tidiness can change behaviour.
 </p>
 
 </div>
@@ -2020,72 +1616,16 @@ Moving a node for tidiness can change behaviour.
 <!--
 The 87-node canvas is unreadable at any size a slide allows. It is a full-page
 figure in the report's appendix, and the whole set is browsable on the
-companion site — offer that rather than showing a postage stamp.
+companion site — offer that rather than showing a postage stamp. The next slide
+shows a canvas at a size worth reading.
 
-Describe the loop instead, in one breath: the detector returns the candidate
-elements of one type, the operator picks one from a dropdown, the arm aligns,
-the policy runs, the operator confirms the outcome, and the workflow returns to
-detection until that substep is reported done.
+Describe the loop instead, in one breath, walking the five numbered steps. The
+point is that the detector is the thing that resolves "which of the five rotary
+switches" — a deterministic component, not the language model — and the operator
+is in the loop at the pick and at the confirmation.
 
-Then spend the rest of the slide on the right-hand column, because it is the
-most surprising thing in this part and it is a genuine trap. It is also the
-argument for writing that short manual: this rule is invisible in the editor
-and was learned by running into it.
--->
-
----
-
-# Mechanical tolerance beats control accuracy
-
-<div class="grid grid-cols-2 gap-10 mt-3">
-<div class="flex items-center">
-
-<img src="/img/tool_rack.jpg" class="w-full border border-[#deded9]" />
-
-</div>
-<div class="pt-4">
-
-<div class="takeaway warn">
-The rack is bolted on, so the exchange is a chain of <strong>taught joint
-positions</strong> — no camera, no IK. Under a straight push the residual
-misalignment jams the coupling, so the workflow <strong>shakes the wrist</strong>
-while pressing and the lead-in chamfer pulls the halves together.
-</div>
-
-<div class="grid grid-cols-3 gap-4 mt-5 text-sm">
-<div><div class="kicker mb-1">Pickups</div><strong>9 / 10</strong></div>
-<div><div class="kicker mb-1">Park</div><strong>10 / 10</strong></div>
-<div><div class="kicker mb-1">Duration</div><strong>≈30 s</strong></div>
-</div>
-
-</div>
-</div>
-
-<!--
-This is one of the lessons-learned arriving early, and it is the most
-transferable thing in the thesis.
-
-No amount of software removes the residual error of a taught position. What
-removes it is a chamfer and a wrist that oscillates while it presses: the
-mechanism absorbs the misalignment. That is a cheaper answer than a more
-accurate controller, and it is why this substep needs neither vision nor IK.
-
-The other property a deterministic sequence of taught positions has: a retry
-starts from exactly the same state as the first attempt. The one failure cost a
-second 30-second run and nothing else.
-
-The canvas on the right holds no joint value at all — every move is a call of a
-"drive to position" sub-workflow that reads the row from a data table. So
-re-teaching a slot after a mechanical change is one row, not a search through
-the canvas. Those data tables are the blackboard of the whole layer: taught
-positions, task state, and the locks that would keep two actuating workflows
-apart.
-
-That canvas is the live one, not a screenshot — the rover's own export, rendered
-by n8n. If the question comes, click it once and zoom into a node rather than
-promising the appendix. Click the slide background afterwards, or the iframe
-keeps the arrow keys. Without a network it is the screenshot again, and nothing
-about the slide changes.
+The branch-order trap that this canvas taught me is on the "what n8n is not"
+slide at the end of this part; do not spend it here.
 -->
 
 ---
@@ -2097,51 +1637,62 @@ about the slide changes.
 <!--
 The canvas at a size worth reading. It pans and zooms, and a double-click opens
 a node — but click the slide background again before paging on, or the arrow
-keys go to the iframe instead of the deck.
+keys go to the iframe instead of the deck. Without a network it is the
+screenshot, and nothing about the slide changes.
 
 Twenty-five nodes. What to point at: every move is a call of the
 *Position anfahren* sub-workflow, so the canvas holds no joint value at all —
 the values live in a data table and re-teaching a slot after a mechanical change
-is one row. And the form node in the middle is the operator confirming the tool
-is held before the arm lifts it clear.
+is one row, not a search through the canvas. Those data tables are the
+blackboard of the whole layer: taught positions, task state, and the locks that
+would keep two actuating workflows apart. And the form node in the middle is the
+operator confirming the tool is held before the arm lifts it clear.
+
+THE LESSON THIS SLIDE CARRIES, and it is the most transferable thing in the
+thesis: MECHANICAL TOLERANCE BEATS CONTROL ACCURACY. The rack is bolted on, so
+the exchange is a chain of taught joint positions — no camera, no IK. Under a
+straight push the residual misalignment jams the coupling, so the workflow
+SHAKES THE WRIST while pressing and the lead-in chamfer pulls the halves
+together. No amount of software removes the residual error of a taught position;
+a chamfer and an oscillating wrist absorb it. That is cheaper than a more
+accurate controller.
+
+The numbers: 9 of 10 pickups, 10 of 10 parks, about 30 s a change. And a
+deterministic sequence of taught positions has one more property — a retry
+starts from exactly the same state as the first attempt, so the one failure cost
+a second 30-second run and nothing else.
 -->
 
 ---
 
 # It reaches further than the robot
 
-<div class="grid grid-cols-5 gap-8 mt-3">
-<div class="col-span-3 flex items-center">
+<img src="/img/n8n_battery_check.png" class="w-[74%] mx-auto border border-[#deded9] mt-2" />
 
-<img src="/img/n8n_battery_check.png" class="w-full border border-[#deded9]" />
+<div class="grid grid-cols-2 gap-10 mt-4 text-sm">
+<div>
 
-</div>
-<div class="col-span-2 pt-1">
-
-<div class="takeaway text-sm">
+<div class="takeaway">
 <strong>Ten nodes, no code.</strong> Every five minutes: on battery, below
 threshold, no alert open → raise a task in Asana, and remember that it did.
 </div>
 
-<div class="kicker mb-2 mt-5">And downwards, into another subsystem</div>
+</div>
+<div>
+
+<div class="kicker mb-2">And downwards, into another subsystem</div>
 
 The **deep-sampling** workflow: 70 nodes, five phases, built by another team
-member who did not write the node package.
-
-<table class="mt-3">
-<tbody>
-<tr><td>complete runs</td><td>3 of 3</td></tr>
-<tr><td>end to end</td><td>111 – 148 s</td></tr>
-<tr><td>service call, median</td><td>563 ms</td></tr>
-</tbody>
-</table>
+member who did not write the node package. 3 of 3 complete runs, 111–148 s end
+to end, service call 563 ms median.
 
 </div>
 </div>
 
 <!--
-The two examples are deliberately opposite directions, and together they are
-what makes the integration worth more than a sequencer.
+The same canvas as two slides ago, now for what it does rather than for what it
+looks like. The two examples are deliberately opposite directions, and together
+they are what makes the integration worth more than a sequencer.
 
 Upward: a ROS2 topic reaches an issue tracker. The equivalent in a bespoke node
 needs an Asana client, its credentials, and somewhere to persist the alert
@@ -2162,25 +1713,42 @@ n8n's own overhead is about 120 ms per step.
 
 # What n8n is not
 
-<div class="grid grid-cols-2 gap-12 mt-6 text-base">
+<div class="grid grid-cols-2 gap-12 mt-4 text-sm">
 <div>
 
-**Not a control loop.** ~120 ms a step, ~1 s once it waits on a subsystem. The
-50 ms period stays in ROS2.
+<div class="kicker mb-2">Not a control loop</div>
 
-**One node at a time**, one branch to completion. A safety property — and why
-sequencing ends up in node positions.
+- ~120 ms a step, ~1 s once it waits on a subsystem
+- The 50 ms period stays in ROS2
+
+<div class="kicker mb-2 mt-5">One node at a time, one branch to completion</div>
+
+- A safety property — but execution is **depth-first**, and where a node has two
+  outgoing connections the **upper branch on the canvas runs first**
+- So a node's vertical position is part of the program: moving one for tidiness
+  can change behaviour
 
 </div>
 <div>
 
-**No interlock between workflows.** Nothing stops two driving the hardware at
-once. Automated triggering would need a lock first.
+<div class="kicker mb-2">No interlock between workflows</div>
 
-**Debugging re-runs from the trigger.** Here that costs a drill cycle, and two
-minutes before the last phase is reached.
+- Nothing stops two driving the hardware at once
+- Automated triggering would need a lock first
+
+<div class="kicker mb-2 mt-5">Debugging re-runs from the trigger</div>
+
+- On the sampling workflow that costs a drill cycle, and two minutes before the
+  last phase is reached
 
 </div>
+</div>
+
+<div class="takeaway warn mt-5">
+The maintenance workflow <em>depends</em> on branch order: the nodes that return
+the beacon and the SpaceMouse to autonomous mode sit <strong>above</strong> the
+branch that starts the next substep. Below it, the next substep would begin
+while the arm was still under manual control.
 </div>
 
 <!--
@@ -2194,6 +1762,11 @@ next team — a command that sets state goes through a service; pin a node's
 output before you debug; an actuating workflow takes a lock in a data table
 first.
 
+The branch-order rule is the most surprising thing in this part and it is a
+genuine trap. It is also the argument for writing that short manual: it is
+invisible in the editor and was learned by running into it on the maintenance
+canvas.
+
 The honest position on where the boundary sits: n8n belongs above the control
 loop. Everything inside it — the 20 Hz policy, the alignment controller, the
 heartbeat — stays in ROS2 and always will.
@@ -2203,7 +1776,7 @@ heartbeat — stays in ROS2 and always will.
 layout: section
 ---
 
-<div class="kicker mb-4">Part 5</div>
+<div class="kicker mb-4">Part 4</div>
 
 # The agent
 
@@ -2212,7 +1785,7 @@ The same tools, driven by a model — and then by a model on board
 </p>
 
 <!--
-Clock check: minute 33 of 46. Five slides, seven minutes.
+Clock check: minute 29 of 45. Six slides, seven minutes.
 
 The arc: an agent is worth having for the open-ended half of the work; it must
 not drive the hardware; and it can be moved onto the rover for free if you are
@@ -2249,7 +1822,7 @@ probe: the read-only switch sits on the CREDENTIAL, not on the node. A workflow
 author cannot lift it from inside a workflow, and neither can the agent —
 an agent driving a node as a tool fills in parameters but never chooses the
 credential. Below all of it, any autonomous motion is still under the heartbeat
-and the e-stop from part 1.
+and the e-stop described on the contributions slide.
 
 The beacon is the apparent exception: setting an indicator light is a service
 call, but it moves nothing.
@@ -2537,7 +2110,7 @@ any tool result. Full transcripts are in the report's appendix.
 layout: section
 ---
 
-<div class="kicker mb-4">Part 6</div>
+<div class="kicker mb-4">Part 5</div>
 
 # On the rover
 
@@ -2546,7 +2119,7 @@ What runs, what does not, and what I would do next
 </p>
 
 <!--
-Clock check: minute 40 of 46. Seven slides and then the demo — these are short,
+Clock check: minute 36 of 45. Seven slides and then the demo — these are short,
 and they are the ones that decide what the room remembers.
 
 Do not speed up here. If you are late, drop "What I would keep from this" and
@@ -2559,38 +2132,38 @@ than rushing the research questions.
 
 # End to end, on the arm
 
-<div class="grid grid-cols-3 gap-6 mt-4">
-<div>
-<div class="kicker mb-2">Rotary switches</div>
+<div class="grid grid-cols-5 gap-8 mt-2">
+<div class="col-span-2">
+
+<img src="/figs/rover_dataset_sample.png" class="w-full" />
+
+<p class="note mt-1 text-[0.72rem]">One episode of the panel-switch dataset.
+Four datasets on the Hub, 20 Hz — black switch 83, red switch 24, lever switch
+11, four instructions 120.</p>
+
+</div>
+<div class="col-span-3 pt-1 text-sm">
+
+<div class="kicker mb-1">Rotary switches</div>
 
 The policy turns them. It often fails on the first attempts, and a retry
-eventually succeeds.
+eventually succeeds. The substep with the most demonstrations behind it — and
+the easiest for a human to teleoperate.
 
-<p class="note mt-2">The substep with the most demonstrations behind it — and
-the easiest for a human to teleoperate.</p>
-</div>
+<div class="kicker mb-1 mt-3">Lever switches</div>
 
-<div>
-<div class="kicker mb-2">Lever switches</div>
+Harder, and hard for a human too: the motion tensions and then **snaps** —
+exactly what a flow-matching policy handles worst. Eleven episodes.
 
-Harder, and hard for a human too: the motion tensions and then **snaps**.
-
-<p class="note mt-2">Exactly the kind of motion a flow-matching policy handles
-worst — and the dataset has eleven episodes.</p>
-</div>
-
-<div>
-<div class="kicker mb-2">The plug</div>
+<div class="kicker mb-1 mt-3">The plug</div>
 
 Not trained. An operator **cannot teleoperate it well enough to demonstrate**,
 so there was nothing to imitate.
 
-<p class="note mt-2">A tool that rotates the plug upright as it closes now
-exists. It has not yet been used to record.</p>
 </div>
 </div>
 
-<div class="takeaway mt-6">
+<div class="takeaway mt-3 text-sm">
 The full chain runs: teleoperated recording → annotation → critic → advantage-conditioned
 fine-tuning → distillation → TensorRT → a policy driving the manipulator, under
 the safety layer, started by a workflow.
@@ -2600,17 +2173,37 @@ the safety layer, started by a workflow.
 Be plain here. The pipeline is demonstrated end to end; the task success rates
 are not what anyone would want yet.
 
+The figure is one episode of the panel-switch dataset: five camera frames along
+the top, the six joints measured against commanded in the middle, the gripper at
+the bottom. The demonstration opens the jaws, holds them while the arm settles,
+closes at 7.5 s, turns the switch with the wrist roll, backs off at 13.5 s.
+
+Say what the recording pipeline actually is, because it is the deliverable: bags
+recorded in the field, episode boundaries and task strings set in an annotation
+GUI, converted offline into a LeRobot dataset with the same converters the live
+system uses. So a recorded frame and a live observation have identical layout by
+construction. Nothing has to be kept in step by hand.
+
+Then the concession, and make it plainly. What the arm inherits is the
+ARCHITECTURE and advantage conditioning, not the RECAP loop that produces the
+gain. The gain was measured on LIBERO, on a different robot, a different dataset
+and a different observation layout. The rover policy is pre-trained on a public
+UR5 dataset for 120k steps and fine-tuned on those recordings for 30k.
+
 The plug is the honest centrepiece and it is a better lesson than a result:
 "you can only imitate what you can demonstrate". The bound is not the learning
 method, it is the data-collection interface. On a real robot that interface —
 the teleoperation rig, the tool — is PART of the learning system, and improving
 it can matter more than improving the architecture. The tool in the report
 rotates the plug through 90 degrees as the jaw closes, which removes the
-regrasp an operator cannot do.
+regrasp an operator cannot do. It exists; it has not yet been used to record.
 
 Also say what the approach phase does, because it is the reliable half: it
 places the gripper inside 25 mm and it is retried from a known pose when it does
 not. Every remaining failure is in the manipulation phase.
+
+The datasets are public under `fhnwrover` on the Hugging Face Hub, and the
+companion site links a browser for them.
 -->
 
 ---
@@ -2789,7 +2382,7 @@ Take them in the order the boxes are in, and resist inflating any of them.
      evidence behind it, and it is the one built to be used by people who did
      not write it.
 
-  2. The APPROACH PHASE aligned, at the accuracy part 1 reports. What cost time
+  2. The APPROACH PHASE aligned, at the 18.1 mm the report measures. What cost time
      was a configuration and rules problem rather than the vision: part of it
      was ours, decided under pressure in the days before the event. Own that
      plainly rather than attributing it to the rules alone — it reads better and
@@ -2989,102 +2582,75 @@ Mention only if asked about reuse beyond the rover.
 
 # Demo
 
-<div class="grid grid-cols-2 gap-10 mt-4">
-<div>
+<div class="kicker mt-5 mb-3">p9.fhnw-rover.ch</div>
 
-<div class="kicker mb-2">p9.fhnw-rover.ch</div>
+<div class="grid grid-cols-2 gap-5">
 
-- **A virtual rover, driven by n8n** — real ROS2 topics, services and actions,
-  sixteen workflows on a live canvas, the editor, a drive form and the agent
-  chat &nbsp;<span class="dim">/demos/rover</span>
-- **SmolVLA + RECAP in your browser** — PushT on WebGPU. Drag the agent away
-  and watch it recover; move the guidance weight
-  &nbsp;<span class="dim">/demos/pusht</span>
+<a class="demo-btn" href="https://p9.fhnw-rover.ch/demos/rover/#workflows" target="_blank">
+<span class="demo-btn-title">The workflow gallery</span>
+<span class="demo-btn-sub">every canvas on the rover, rendered from JSON — pan, zoom, open a node</span>
+</a>
+
+<a class="demo-btn" href="https://p9.fhnw-rover.ch/demos/rover/#drive" target="_blank">
+<span class="demo-btn-title">Drive it, and ask it</span>
+<span class="demo-btn-sub">a virtual rover over real ROS2 — the drive form, the agent chat, the live view</span>
+</a>
+
+<a class="demo-btn" href="https://p9.fhnw-rover.ch/demos/pusht" target="_blank">
+<span class="demo-btn-title">SmolVLA + RECAP in your browser</span>
+<span class="demo-btn-sub">PushT on WebGPU — drag the agent away and watch it recover, move the guidance weight</span>
+</a>
+
+<a class="demo-btn" href="https://p9.fhnw-rover.ch/#libero" target="_blank">
+<span class="demo-btn-title">The LIBERO rollouts</span>
+<span class="demo-btn-sub">the three comparisons of part 1, side by side — and the datasets, on the Hub</span>
+</a>
 
 </div>
-<div>
-
-<div class="kicker mb-2">And the material behind the numbers</div>
-
-- The **LIBERO rollouts** of the three comparisons in part 2, side by side
-- The **demonstration datasets**, episode by episode, in LeRobot's viewer on the
-  Hugging Face Hub
-- The report as a PDF
 
 <div class="takeaway warn mt-5">
 The read-only live view is open to anyone. Send the rover somewhere from your
 phone during the questions if you like.
 </div>
 
-</div>
-</div>
-
 <!--
-Half a minute, and offer it rather than demonstrate it — a live demo in a
-defence is a way to lose five minutes.
+Two to three minutes, and it comes after the conclusions so that skipping it
+costs nothing. The buttons open in a browser tab — check the site before the
+talk.
 
-If the room does want one, the safest is the rover demo: open the drive form,
-send it somewhere, and let the live view show it moving while the battery
-watchdog preempts the patrol. It is a simulated rover offering genuine ROS2
-interfaces, and it is read-only at the protocol level for viewers.
+Offer it rather than work through all four; a live demo in a defence is a way to
+lose five minutes. If the room wants one, take the GALLERY first: it renders its
+canvases from JSON, needs no running n8n and cannot fail in the room. Show the
+maintenance canvas at full size — the thing that is unreadable on a slide — then
+the battery watchdog, which is ten nodes, contains no code, and explains itself:
+read the power source, read the state of charge, compare, raise an Asana task,
+remember that it did. The gallery holds the rover's five canvases alongside the
+eleven demo ones.
 
-The PushT demo is the one that makes the policy tangible: it runs the same
-policy family entirely client-side, so you can take over mid-episode and watch
-it recover, and scrub the guidance weight to see what it does and does not
-change.
--->
-
----
-
-# Demo: the workflow layer, live
-
-<div class="grid grid-cols-2 gap-10 mt-4">
-<div>
-
-<div class="kicker mb-2">p9.fhnw-rover.ch</div>
-
-- **The workflow gallery** — every canvas on the rover, rendered from JSON.
-  Pan, zoom, open a node &nbsp;<span class="dim">/workflows</span>
-- **A virtual rover driven by n8n** — real ROS2 topics, services and actions,
-  sixteen workflows, the editor, a drive form and the agent chat
-  &nbsp;<span class="dim">/demos/rover</span>
-
-</div>
-<div class="pt-1">
-
-| | |
-|---|---|
-| Maintenance | 87 nodes |
-| Deep sampling | 70 nodes, built by a teammate |
-| Tool change | 25 nodes, no camera, no IK |
-| Battery watchdog | 10 nodes, no code |
-
-</div>
-</div>
-
-<!--
-Two minutes, and it comes after the conclusions so that skipping it costs
-nothing.
-
-Open the GALLERY first, not the live instance: it renders from JSON, needs no
-running n8n and cannot fail in the room. Show the maintenance canvas at full
-size — the thing that is unreadable on a slide — then the battery watchdog,
-which is ten nodes, contains no code, and explains itself: read the power
-source, read the state of charge, compare, raise an Asana task, remember that
-it did.
-
-Then the live rover demo if the network cooperates. It serves genuine ROS2
-interfaces from a simulator rather than from Barbara, so it is safe to leave
-running and safe to hand to the room. The drive form and the agent chat are the
-two worth showing; ask the agent what interfaces the robot has and let it
-discover them live.
+Then scroll back up the same page to the live rover if the network cooperates.
+It serves genuine ROS2 interfaces from a simulator rather than from Barbara, so
+it is safe to leave running and safe to hand to the room. The drive form and the
+agent chat are the two worth showing; ask the agent what interfaces the robot
+has and let it discover them live.
 
 Do NOT trigger an actuating workflow. The arm is not here, the heartbeat is not
 present, and a form waiting for a confirmation nobody gives is a bad way to
 spend the last minutes.
 
-Check the site before the talk. The gallery is the offline fallback for
-everything on this slide.
+The PushT demo is the one that makes the policy tangible: it runs the same
+policy family entirely client-side, so you can take over mid-episode and watch
+it recover, and scrub the guidance weight to see what it does and does not
+change. It is also the safest of the four — no server, no network after load.
+
+The LIBERO button lands on the rollouts; the demonstration datasets are on the
+Hugging Face Hub under `fhnwrover`, episode by episode in LeRobot's viewer, and
+the same page links them. The report as a PDF is on the front page.
+
+The n8n editor itself is at n8n-demo.fhnw-rover.ch if anyone asks to see the
+canvases in the tool rather than rendered — but it needs a login, so it is not
+on the slide.
+
+The gallery is the offline fallback for everything here.
 -->
 
 ---
@@ -3290,7 +2856,7 @@ policy is two of them, and the loop between them stays in Python.
 
 <!--
 The second panel of the export figure, given its own page so that it exists in
-the PDF too — the component prints one scene, and the slide in part 2 prints
+the PDF too — the component prints one scene, and the slide in part 1 prints
 the path.
 
 The talk reaches this live with the last click on that slide, or with the "the
@@ -3906,8 +3472,9 @@ requirement states a bound and the observed behaviour is inside it.
 </div>
 
 <!--
-The companion to the "four ways to stop" slide in part 1. That one is what the
-layers do; this one is what they do not, and volunteering it is worth more than
+The companion to the four stopping layers, which are now only a bullet on the
+contributions slide and a paragraph in its notes. Those are what the layers do;
+this one is what they do not, and volunteering it is worth more than
 being caught by it.
 
 The maintenance workflow DEPENDS on the branch-order behaviour: the nodes that

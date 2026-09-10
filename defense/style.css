@@ -368,3 +368,50 @@ figcaption, .cap {
   bottom: 0.85rem;
   width: 118px;
 }
+
+/* ------------------------------------------------------------- demo buttons */
+/* The demo slides carry links rather than descriptions: one click during the
+   questions, instead of a typed URL. Styled as the styleguide's hoverable card
+   with the yellow rule the headings use. */
+.slidev-layout a.demo-btn,
+.slidev-layout a.demo-btn:visited {
+  display: block;
+  padding: 0.85rem 1.05rem;
+  background: var(--fhnw-grey-1);
+  border: 1px solid var(--fhnw-grey-2);
+  border-left: 4px solid var(--fhnw-black);
+  color: var(--fhnw-black);
+  text-decoration: none;
+  transition: 0.15s ease-out;
+  box-shadow: 3px 3px 0 transparent;
+}
+.slidev-layout a.demo-btn:nth-child(even) { border-left-color: var(--fhnw-yellow); }
+.slidev-layout a.demo-btn:hover {
+  background: #ffffff;
+  border-color: var(--fhnw-black);
+  border-left-color: var(--fhnw-black);
+  box-shadow: 3px 3px 0 var(--fhnw-black);
+}
+.demo-btn-title {
+  display: block;
+  font-weight: 600;
+  font-size: 1.02rem;
+  line-height: 1.3;
+}
+.demo-btn-title::after {
+  content: ' \2197';
+  font-weight: 400;
+  color: var(--fhnw-grey-3);
+}
+.demo-btn-sub {
+  display: block;
+  margin-top: 0.2rem;
+  font-size: 0.8rem;
+  line-height: 1.45;
+  color: var(--fhnw-ink-2);
+}
+
+/* The SnapFlow loss is too wide for a two-fifths column — KaTeX display math
+   does not wrap — so it runs full width under the figure at its own scale. */
+.snapflow-loss .katex-display { font-size: 0.82rem; margin: 0; text-align: left; }
+.snapflow-loss .katex-display > .katex { text-align: left; }
