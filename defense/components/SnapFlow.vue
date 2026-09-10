@@ -34,6 +34,12 @@ import {
 const props = defineProps({
   width: { type: Number, default: 498 },
   height: { type: Number, default: 300 },
+  /**
+   * Which scene to open on, and — since a canvas can only print one — which
+   * one lands in the PDF. `shortcut` builds the jump; `rounds` shows the
+   * training loop converging.
+   */
+  scene: { type: String, default: 'shortcut' },
 })
 
 const { isPrintMode } = useNav()
@@ -62,6 +68,44 @@ const jump = [EPS[0] + chord[0], EPS[1] + chord[1]]
 // nestling onto the blue curve, which is the thing the beat is claiming.
 const ladder = [4, 8].map((k) => ({ k, pts: integrate(EPS[0], EPS[1], k, field) }))
 
+/**
+ * Scene 2: the training loop, one round per entry.
+ *
+ * Under the shortcut view a student whose one-step map is worth 2^n Euler steps
+ * is trained onto its own teacher, whose two half-steps are worth 2^(n+1). So
+ * round n starts with the student at E(2^n) and the teacher at E(2^(n+1)),
+ * training moves the student ONTO the teacher, and the teacher — recomputed
+ * from the improved model — is ahead again by half as much. Both numbers below
+ * are measured, not asserted: the student-teacher gap runs
+ * 1.09, 0.20, 0.11, 0.06 and its distance to the ten-step endpoint runs
+ * 1.39, 0.34, 0.14, 0.02.
+ *
+ * Three rounds, because a fourth would land the student at E(16), which is
+ * PAST the ten-step endpoint — correctly, since the fixed point of the
+ * recursion is the exact integral and ten steps is itself an approximation of
+ * it, but a readout that improves to 0.02 and then worsens to 0.04 reads as a
+ * bug rather than as a footnote. Three rounds end exactly on the thing the
+ * rover deploys.
+ */
+const ROUNDS = [0, 1, 2].map((n) => {
+  const k = 2 ** n
+  // Two half-steps of a map worth k Euler steps each is the 2k-step
+  // integration, so its node at tau = 0.5 is exactly where the teacher's first
+  // half-step lands and its last node is where the second one does.
+  const fine = integrate(EPS[0], EPS[1], 2 * k, field)
+  return {
+    n,
+    S: integrate(EPS[0], EPS[1], k, field).at(-1), // the student's single jump
+    M: fine[k], // the teacher, after one half-step
+    T: fine.at(-1), // …and after the second
+  }
+})
+
+const lerp = (a, b, t) => [a[0] + (b[0] - a[0]) * t, a[1] + (b[1] - a[1]) * t]
+
+const ROUND_MS = 2600
+const dist = (a, b) => Math.hypot(a[0] - b[0], a[1] - b[1])
+
 const BEATS = [
   { ms: 1900, cap: 'the deployed sampler: ten Euler steps' },
   { ms: 1300, cap: 'one Euler step of size 1 — it misses' },
@@ -70,10 +114,14 @@ const BEATS = [
   { ms: 1500, cap: 'the student jumps once, and lands where the chord did' },
 ]
 
-// A ref, not a plain variable: the beat buttons highlight the current beat,
+const scene = ref(props.scene)
+
+// Refs, not plain variables: the buttons highlight the current beat or round,
 // and a plain `let` would leave that highlight stuck on whatever it was first.
 const beat = ref(0)
+const round = ref(0)
 let bt = 0
+let rt = 0
 let raf = 0
 let last = 0
 const capNow = ref(BEATS[0].cap)
@@ -83,10 +131,18 @@ function frame(t) {
   const dt = last ? Math.min(t - last, 64) : 0
   last = t
   if (playing.value) {
-    bt += dt / BEATS[beat.value].ms
-    while (bt >= 1) {
-      bt -= 1
-      beat.value = (beat.value + 1) % BEATS.length
+    if (scene.value === 'rounds') {
+      rt += dt / ROUND_MS
+      while (rt >= 1) {
+        rt -= 1
+        round.value = (round.value + 1) % ROUNDS.length
+      }
+    } else {
+      bt += dt / BEATS[beat.value].ms
+      while (bt >= 1) {
+        bt -= 1
+        beat.value = (beat.value + 1) % BEATS.length
+      }
     }
   }
   draw()
@@ -138,6 +194,113 @@ function cross(ctx, view, p, colour, r = 5) {
   ctx.stroke()
 }
 
+/** The field, the two modes and the reference integration — common to both scenes. */
+function drawStage(ctx, view, tenUpTo = 1) {
+  ctx.globalAlpha = 0.45
+  drawField(ctx, view, 0.5, field)
+  ctx.globalAlpha = 1
+  drawMode(ctx, view, BOTH[0], BLUE)
+  drawMode(ctx, view, BOTH[1], BLUE)
+  drawPath(ctx, view, ten, tenUpTo, BLUE, 2)
+  if (tenUpTo > 0.98) {
+    dot(ctx, view, A, BLUE, 4)
+    label(ctx, 'A — ten steps', view.toX(A[0]) + 11, view.toY(A[1]) - 12, BLUE, 'left', 11, '600')
+  }
+}
+
+/** The caption strip, on a panel so it never fights the field behind it. */
+function drawCaption(ctx, w, text) {
+  ctx.fillStyle = 'rgba(255, 255, 255, 0.9)'
+  ctx.fillRect(6, 6, w - 12, 22)
+  label(ctx, text, 12, 18, INK, 'left', 11, '600')
+}
+
+/**
+ * Scene 2 — one training round, in four phases: train the student onto the
+ * teacher, hold on the consistency, let the teacher recompute ahead, hold.
+ */
+function drawRounds(ctx, view, w, h) {
+  const i = isPrintMode.value ? ROUNDS.length - 1 : round.value
+  const u = isPrintMode.value ? 1 : rt
+  const { S, M, T } = ROUNDS[i]
+  const next = ROUNDS[Math.min(i + 1, ROUNDS.length - 1)]
+
+  // train: 0.10 -> 0.50, teacher recomputes: 0.62 -> 0.92.
+  const trained = ease(Math.min(Math.max((u - 0.1) / 0.4, 0), 1))
+  const moved = ease(Math.min(Math.max((u - 0.62) / 0.3, 0), 1))
+  // The student is ONE call, so its path is one straight segment however good
+  // it gets; training swings that segment from where it lands now onto where
+  // the teacher lands. The teacher is always two segments through its
+  // half-step, and recomputing on the improved model moves both of its nodes.
+  const student = lerp(S, T, trained)
+  const half = lerp(M, next.M, moved)
+  const teacher = lerp(T, next.T, moved)
+
+  drawStage(ctx, view)
+
+  // Where the student has been, so the march is visible rather than remembered.
+  for (let k = 0; k <= i; k++) {
+    ctx.globalAlpha = 0.3
+    dot(ctx, view, ROUNDS[k].S, ORANGE, 2.4)
+    ctx.globalAlpha = 1
+  }
+
+  // The teacher's two half-steps, then the student's single jump over them.
+  drawPath(ctx, view, [EPS, half, teacher], 1, hexToRgba(INK, 0.85), 1.5)
+  dot(ctx, view, half, INK, 3.2, true)
+  drawPath(ctx, view, [EPS, student], 1, ORANGE, 2.4)
+
+  // The gap the consistency term is closing.
+  ctx.setLineDash([3, 3])
+  ctx.lineWidth = 1.2
+  ctx.strokeStyle = hexToRgba(INK, 0.65)
+  ctx.beginPath()
+  ctx.moveTo(view.toX(student[0]), view.toY(student[1]))
+  ctx.lineTo(view.toX(teacher[0]), view.toY(teacher[1]))
+  ctx.stroke()
+  ctx.setLineDash([])
+
+  dot(ctx, view, teacher, INK, 4.2, true)
+  dot(ctx, view, student, ORANGE, 4.6)
+  if (i === 0) {
+    label(ctx, 'half-step', view.toX(half[0]) - 8, view.toY(half[1]) + 12, INK, 'right', 10)
+  }
+
+  // Three cases, and the first has to be tested on the real distance rather
+  // than on screen proximity: late rounds put the markers a few pixels apart
+  // while the teacher is genuinely ahead, and "jump = chord" would be a lie
+  // there. Only an actual coincidence earns that label.
+  const gapWorld = dist(student, teacher)
+  if (gapWorld < 0.01) {
+    label(ctx, 'jump = chord', view.toX(student[0]) - 10, view.toY(student[1]) + 15, INK, 'right', 10, '600')
+  } else if (gapWorld * view.k > 34) {
+    label(ctx, 'teacher · two half-steps', view.toX(teacher[0]) + 10, view.toY(teacher[1]) - 12, INK, 'left', 10, '600')
+    label(ctx, 'student · one jump', view.toX(student[0]) - 10, view.toY(student[1]) + 14, ORANGE, 'right', 10, '600')
+  } else {
+    // Too close to carry two labels, too far apart to call them one.
+    label(ctx, 'jump', view.toX(student[0]) - 10, view.toY(student[1]) + 15, ORANGE, 'right', 10, '600')
+  }
+
+  const last = i === ROUNDS.length - 1
+  const cap =
+    u < 0.1 ? `round ${i + 1}: the teacher is ahead of the jump`
+      : u < 0.52 ? 'training: the jump learns the chord'
+        : u < 0.62 ? 'consistency — the jump now IS the two half-steps'
+          : last ? 'and by now the jump is the ten-step answer'
+            : u < 0.94 ? 'the teacher recomputes on the improved model…'
+              : '…and is ahead again, by half as much'
+  drawCaption(ctx, w, cap)
+
+  // Measured, and printed so the halving is not just an impression.
+  const gap = dist(student, teacher)
+  const toA = dist(student, A)
+  ctx.fillStyle = 'rgba(255, 255, 255, 0.88)'
+  ctx.fillRect(8, h - 40, 214, 32)
+  label(ctx, `round ${i + 1} of ${ROUNDS.length}`, 14, h - 30, DIM, 'left', 10, '600')
+  label(ctx, `jump → chord  ${gap.toFixed(2)}`, 14, h - 16, INK, 'left', 10, '600')
+  label(ctx, `jump → A  ${toA.toFixed(2)}`, 132, h - 16, ORANGE, 'left', 10, '600')
+}
+
 function draw() {
   const el = canvas.value
   if (!el) return
@@ -145,24 +308,24 @@ function draw() {
   const ctx = prepare(el, w, h)
   const view = makeView(w, h)
 
+  if (scene.value === 'rounds') {
+    drawRounds(ctx, view, w, h)
+    dot(ctx, view, EPS, DIM, 3)
+    label(ctx, 'ε', view.toX(EPS[0]) - 9, view.toY(EPS[1]), DIM, 'right', 12, '600')
+    ctx.strokeStyle = RULE
+    ctx.lineWidth = 1
+    ctx.strokeRect(0.5, 0.5, w - 1, h - 1)
+    return
+  }
+
   // In print mode every beat is complete: the figure is its own final state.
   const b = isPrintMode.value ? BEATS.length - 1 : beat.value
   const t = isPrintMode.value ? 1 : ease(bt)
   capNow.value = BEATS[b].cap
   const at = (i) => (b > i ? 1 : b === i ? t : 0)
 
-  ctx.globalAlpha = 0.45
-  drawField(ctx, view, 0.5, field)
-  ctx.globalAlpha = 1
-  drawMode(ctx, view, BOTH[0], BLUE)
-  drawMode(ctx, view, BOTH[1], BLUE)
-
   // Beat 1 — the reference integration.
-  drawPath(ctx, view, ten, at(0), BLUE, 2)
-  if (at(0) > 0.98) {
-    dot(ctx, view, A, BLUE, 4)
-    label(ctx, 'A — ten steps', view.toX(A[0]) + 11, view.toY(A[1]) - 12, BLUE, 'left', 11, '600')
-  }
+  drawStage(ctx, view, at(0))
 
   // Beat 2 — the naive single step.
   if (at(1) > 0) {
@@ -229,10 +392,7 @@ function draw() {
     })
   }
 
-  // Caption, on a panel so it never fights the field behind it.
-  ctx.fillStyle = 'rgba(255, 255, 255, 0.9)'
-  ctx.fillRect(6, 6, w - 12, 22)
-  label(ctx, capNow.value, 12, 18, INK, 'left', 11, '600')
+  drawCaption(ctx, w, capNow.value)
 
   dot(ctx, view, EPS, DIM, 3)
   label(ctx, 'ε', view.toX(EPS[0]) - 9, view.toY(EPS[1]), DIM, 'right', 12, '600')
@@ -271,9 +431,26 @@ function setBeat(i) {
   playing.value = false
   draw()
 }
+/** A round stops on its last phase, where the new gap is already visible. */
+function setRound(i) {
+  round.value = i
+  rt = 0.97
+  playing.value = false
+  draw()
+}
+function setScene(s) {
+  scene.value = s
+  beat.value = 0
+  round.value = 0
+  bt = 0
+  rt = 0
+  playing.value = true
+}
 function replay() {
   beat.value = 0
+  round.value = 0
   bt = 0
+  rt = 0
   playing.value = true
 }
 </script>
@@ -285,7 +462,7 @@ function replay() {
       <button class="ff-btn" @click="playing ? (playing = false) : replay()">
         {{ playing ? 'pause' : 'play' }}
       </button>
-      <span class="sf-seg">
+      <span v-if="scene === 'shortcut'" class="sf-seg">
         <span class="ff-lab">beat</span>
         <button
           v-for="(b, i) in BEATS.slice(0, 4)"
@@ -295,6 +472,20 @@ function replay() {
           @click="setBeat(i)"
         >{{ i + 1 }}</button>
       </span>
+      <span v-else class="sf-seg">
+        <span class="ff-lab">round</span>
+        <button
+          v-for="(r, i) in ROUNDS"
+          :key="i"
+          class="ff-btn"
+          :class="{ on: !playing && round === i }"
+          @click="setRound(i)"
+        >{{ i + 1 }}</button>
+      </span>
+      <button
+        class="ff-btn sf-scene"
+        @click="setScene(scene === 'shortcut' ? 'rounds' : 'shortcut')"
+      >{{ scene === 'shortcut' ? 'training rounds →' : '← the shortcut' }}</button>
     </div>
   </div>
 </template>
@@ -310,6 +501,7 @@ function replay() {
   font-size: 0.72rem;
 }
 .sf-seg { display: flex; align-items: baseline; gap: 0.3rem; }
+.sf-scene { margin-left: auto; }
 .ff-lab {
   text-transform: uppercase;
   letter-spacing: 0.5px;

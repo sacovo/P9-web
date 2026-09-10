@@ -16,33 +16,74 @@ them.
 
 ## Structure
 
-42 talk slides and 7 backup, in five parts, plus a cover, five dividers and a
-closing slide — 57 in all. Every slide carries presenter notes, and the notes
+52 talk slides and 15 backup, in six parts, plus a cover, seven dividers
+and a closing slide — 75 in all. Every slide carries presenter notes, and the notes
 on the dividers carry a **clock check**: where you should be at that point, and
 what to drop first if you are late.
 
 | Part | Talk slides | Reach it at |
 |---|---:|---:|
-| Opening — the task, the robot, the questions | 4 | 0 min |
-| 1 — how the arm is commanded | 3 | 4 min |
-| 2 — the policy: SmolVLA, RECAP, SnapFlow, TensorRT | 15 | 8 min |
-| 3 — the workflow layer | 7 | 24 min |
-| 4 — the agent, and the fine-tuned local model | 5 | 31 min |
-| 5 — on the rover, closing, and the live demo | 8 | 38 min |
+| Opening — the rover, the panel, the questions, the system, ROS2, the stopping layers | 7 | 0 min |
+| 1 — the approach phase: markers, the pooled fit, the error budget | 2 | 6 min |
+| 2 — the policy: SmolVLA, RECAP, SnapFlow, LIBERO, the rollout demo | 17 | 8 min |
+| 3 — real time on the Jetson | 3 | 24 min |
+| 4 — the workflow layer | 8 | 27 min |
+| 5 — the agent, and the fine-tuned local model | 6 | 33 min |
+| 6 — on the rover, the ERC, closing, and the workflow demo | 9 | 39 min |
+
+The parts follow the report's contributions rather than the order the system is
+built in, so a reader of the report can map one onto the other. The two pieces
+of supporting work sit in the opening, where the report also puts them: the
+layer map (§2.4) and the four stopping layers (§2.1.4).
 
 The deck is paced for 41 minutes and the live demo at the end is the other
 three, so the 45-minute ceiling is met with the demo and comfortably beaten
 without it. That is why the demo sits *after* the conclusions: skipping it
 costs nothing.
 
-Results are deliberately **not** re-created as slides. The companion site
-carries the LIBERO rollouts, the workflow canvases, the datasets and two
-browser demos, and the deck links to them (`p9.fhnw-rover.ch`). The final demo
-slide links the two live n8n instances instead — the public simulator at
-`n8n-demo.fhnw-rover.ch` and the rover's own at `172.16.10.121:5678`, which
-only answers on the team network. Check both before the talk; the workflow
-gallery on the companion site renders its canvases from JSON and needs no
-instance at all, so it is the offline fallback.
+Results are deliberately **not** re-created as slides *in the talk*. The
+companion site carries the LIBERO rollouts, the workflow canvases, the datasets
+and two browser demos, and the deck links to them (`p9.fhnw-rover.ch`). The
+appendix is the exception: it carries the result tables most likely to be asked
+for in the questions, one per slide, so an answer does not depend on the site
+being reachable from the room.
+
+There are two demos and they sit apart. The **policy** demo plays three LIBERO
+rollouts through `Clip.vue` — one success per suite, from the deck's own
+`public/videos` — and sits inside part 2, straight after the results it
+demonstrates; the results slide links to it with `<Link to="policy-demo">`, so
+the slide carries a `routeAlias`. The **workflow** demo is at the end, on
+`p9.fhnw-rover.ch`: open the gallery first, which renders its canvases from JSON
+and cannot fail in the room, and the live simulated rover at `/demos/rover` only
+if the network cooperates. Check the site before the talk.
+
+## Four ways this file breaks silently
+
+Every one of these was hit while editing the deck, and only one of them errors.
+
+1. **A separator needs a blank line after it.** `---` followed straight by
+   content is parsed as the start of a YAML frontmatter block, and Slidev
+   swallows the whole slide into the previous one — no error, the slide simply
+   vanishes from the deck. Compare `npx slidev` output against your own count
+   after any scripted edit.
+2. **A markdown table in a column div followed by a sibling column** makes the
+   Vue compiler report `Invalid end tag`. Write that table as raw `<table>`
+   instead; `style.css` styles both identically.
+3. **An inline `<svg>` needs its whole opening tag on one line.** `svg` is not
+   in markdown-it's block-tag list, so it is recognised only by the rule that
+   wants a complete tag alone on a line. Split it over two lines and the figure
+   is parsed as prose, which surfaces as `Element is missing end tag`.
+4. **SVG `font-size` attributes lose to the stylesheet.** Presentation
+   attributes rank below every CSS rule, and the deck sets font sizes on
+   elements, so text renders at heading size. Put `style="font-size:…"` on each
+   `<text>`.
+
+A fifth, harmless but confusing: `mt-*` on a `<p>` does nothing, because
+`.slidev-layout p` (0,1,1) outranks the utility class (0,1,0). Wrap the
+paragraph in a div and put the margin there.
+
+Two canvases are not left to the site, though: the toolchanger slide and the
+agent slide carry the real ones. See **The live canvases** below.
 
 ## Usage
 
@@ -76,7 +117,7 @@ Served from a sub-path rather than a domain root, the deck needs the matching
 `--base`, or every asset in it 404s. `../scripts/sync-deck.mjs` is what passes
 it; anything that builds an asset URL at runtime has to prefix
 `import.meta.env.BASE_URL` itself, since Vite only rewrites the static ones.
-`components/Clip.vue` is the case in point.
+`components/Clip.vue` and `components/N8nCanvas.vue` are the cases in point.
 
 ## Layout
 
@@ -86,10 +127,12 @@ it; anything that builds an asset URL at runtime has to prefix
 | `style.css` | FHNW HSI styleguide, self-hosted Inter, print-safe |
 | `global-top.vue` | logo + page number overlay (must be `-top`, not `-bottom`) |
 | `components/Clip.vue` | LIBERO rollout video; falls back to its poster during export |
+| `components/N8nCanvas.vue` | a real n8n canvas on the slide; falls back to a screenshot |
 | `components/flowfield.ts` | the 2-D flow-matching example, in closed form |
 | `components/FlowMatching.vue` | the sampler, animated one Euler step at a time |
 | `components/Guidance.vue` | classifier-free guidance, as a scrubbable weight |
 | `components/SnapFlow.vue` | the shortcut and its bootstrap, in four beats |
+| `components/TrtPipeline.vue` | the TensorRT export path, walked by the slide's clicks |
 | `assets/render_charts.sh` | renders the report's TikZ figures to SVG |
 | `assets/sync_assets.sh` | copies the raster figures and photographs in |
 | `assets/*.tex` | the two figures the report draws inline, lifted verbatim |
@@ -126,6 +169,20 @@ in the deck that a still image explains badly, so they are drawn live on a
   teach itself without going in circles" — here the distance to the ten-step
   endpoint falls 1.39, 0.34, 0.14, 0.02, monotonically and for every sample
   tried, so each round's target really is ahead of the student.
+  <br>Its **second scene**, behind the "training rounds" button, plays that
+  argument out as training. Both maps are drawn as paths rather than endpoints,
+  because that is what makes them different: the student is one straight
+  segment (one forward pass, however good it gets) and the teacher is two,
+  through its half-step. Each round the jump swings onto the chord, the two
+  ends meet, and the teacher — recomputed on the improved model — is ahead
+  again by half as much. The gaps it closes run
+  1.09, 0.20, 0.11 while the student lands 0.34, 0.14, 0.02 from A, so
+  consistency is re-established every round *and* what is left of it halves. It
+  stops at three rounds: a fourth lands the student past A, which is correct
+  (the fixed point is the exact integral, and ten steps is itself 0.10 short of
+  it) but reads as a bug. A canvas can only print one scene, so the appendix
+  carries a second copy with `scene="rounds"` for the PDF, followed by the
+  slide answering why the target is two half-steps and not the ten-step solve.
 
 None of them is an impression of the maths. The data distribution is a Gaussian
 mixture with a shared variance, which puts the exact marginal velocity field in
@@ -152,6 +209,54 @@ off screen — every slide in a Slidev deck is mounted at once, so a bare
 finished trajectories for the sampler, and the three weights overlaid for the
 guidance sweep.
 
+## The export figure
+
+The TensorRT slide does not import the report's figure — `TrtPipeline.vue`
+draws it. The report's version is a TikZ export whose labels are glyph
+outlines, and at the size a slide could give it (a three-fifths column) none of
+them survived a projector. Drawn as SVG in the deck's own font it fills the
+slide, scales with it, and stays sharp in the PDF.
+
+Being an element rather than a picture buys the other half: the slide's own
+clicks walk it (`clicks: 4` in that slide's frontmatter, read through
+`useSlideContext().$clicks`), so the room gets one machine at a time — cluster,
+export, build, and then the transfer that does not work — instead of the whole
+graph at once. The buttons under it do the same thing by hand, for the
+questions.
+
+Like `SnapFlow`, it has two scenes and a printed page can only carry one. The
+talk reaches the second — what the two engines contain — with the last click;
+the appendix mounts a second copy with `scene="engines"` so the PDF has it too.
+
+## The live canvases
+
+The toolchanger and agent slides do not show pictures of an n8n canvas — they
+show the canvas. `components/N8nCanvas.vue` mounts the same `<n8n-demo>` web component
+the companion site's workflow gallery uses, fed the same export from
+`../content/gallery.json`, so the graph on the slide is the workflow that runs
+on the rover and it pans, zooms and opens a node under a double-click.
+
+Three differences from the site's version, all of them because this is a talk:
+
+- **It is never live in the PDF.** `useNav().isPrintMode` is the switch, exactly
+  as in `Clip.vue`; export gets each slide's `fallback` screenshot
+  (`toolchanger_workflow.png`, `n8n_ros2_agent.png`), which is why
+  `sync_assets.sh` still copies them.
+- **It boots a slide early and is dropped two slides on.** A whole n8n frontend
+  takes a few seconds to come up, and the screenshot stays on top of it until
+  the frontend's `n8nReady` handshake arrives, so the slide is never blank and
+  never shows the boot. Nothing is left running behind the rest of the deck.
+- **Unreachable is the same as print.** No probe is needed: the handshake is
+  what removes the screenshot, and an iframe that cannot load never sends one.
+  With no network in the room the slide is what it was before.
+
+The renderer is `n8n-preview.fhnw-rover.ch`, the data-less instance, and the
+host comes from `../site.config.json` — the same file `src/config.ts` reads, so
+moving the zone stays one file. **`clicktointeract` matters here:** until the
+canvas is clicked its iframe is `pointer-events: none` and cannot take focus,
+so the arrow keys still page the deck. After clicking into it, click the slide
+background again before paging on.
+
 ## Regenerating the figures
 
 Nothing in `public/` is drawn here. Everything comes from the thesis repo
@@ -164,10 +269,10 @@ door, so a figure has exactly one source:
 ```
 
 Both scripts copy exactly what `slides.md` references and nothing else, so
-adding a figure to a slide means adding it to the list. Three of the report's
-figures are deliberately absent — `snapflow_shortcut`, `cfg_guidance` and the
-Fachvortrag's `fig_flow_steps_only` — because the animated components above
-replaced them.
+adding a figure to a slide means adding it to the list. Four of the report's
+figures are deliberately absent — `snapflow_shortcut`, `cfg_guidance`,
+`tensorrt_pipeline` and the Fachvortrag's `fig_flow_steps_only` — because the
+components above replaced them.
 
 `render_charts.sh` needs a TeX installation with `standalone` and `tikz`; it
 wraps each `charts/*.tex` fragment in a preamble that repeats main.tex's

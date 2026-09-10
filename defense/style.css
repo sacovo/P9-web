@@ -193,6 +193,16 @@
   padding: 0.32rem 0.6rem;
 }
 .slidev-layout tr:last-child td { border-bottom: 2px solid var(--fhnw-black); }
+
+/* Table numbers are read down the column, so the digits have to be one width
+   and the decimal points have to line up. `tabular-nums` does the first. The
+   second needs padding, and it has to be blank rather than zeros: a value
+   measured to three decimals must not be printed to five. `.pad` reserves the
+   width of the digits a value does not have without asserting them, which is
+   what siunitx does for the same tables in the report. */
+.slidev-layout th,
+.slidev-layout td { font-variant-numeric: tabular-nums; }
+.slidev-layout .pad { visibility: hidden; }
 /* the winning cell is marked the way the styleguide marks links: a yellow rule */
 .slidev-layout table strong {
   font-weight: 600;

@@ -164,3 +164,23 @@
 {$RECAP_LABEL}.{$LEGACY_DOMAIN} {
 	redir https://{labels.3}.{$BASE_DOMAIN}{uri} permanent
 }
+
+# ---------------------------------------------------------------------------
+# Independent sites, one directory per domain under ~/sites on the server,
+# mounted at /srv/sites. Everything above is part of this deployment; anything
+# imported here belongs to a different project that merely shares the edge,
+# because Caddy owns :80 and :443 and a second one cannot bind them.
+#
+# Each site owns sites/<domain>/Caddyfile and serves from sites/<domain>/public.
+# Deploy keys are scoped by rrsync to the public/ directory alone, so a site's
+# repository can replace its own content but cannot edit any site block —
+# including its own. Adding or changing a block is a deliberate act here.
+#
+# An invalid block cannot take the edge down: `caddy reload` validates the whole
+# config first and keeps the running one on failure, so the blast radius of a
+# bad site file is that the reload is refused, not an outage. Static content
+# needs no reload at all — file_server reads from disk per request.
+#
+# The glob matches nothing until a site exists, which is not an error.
+# ---------------------------------------------------------------------------
+import /srv/sites/*/Caddyfile

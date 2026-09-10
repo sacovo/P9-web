@@ -23,12 +23,12 @@ talk="$deck/../presentation"
 
 # The lists below mirror what `slides.md` actually references — adding a figure
 # to a slide means adding it here. Three figures the report has are deliberately
-# NOT copied, because animated components replaced them: `snapflow_shortcut`,
-# `cfg_guidance` and the Fachvortrag's `fig_flow_steps_only`.
+# NOT copied, because components or a table replaced them: `snapflow_shortcut`,
+# `cfg_guidance`, `tensorrt_pipeline`, `safety_layers` and the Fachvortrag's
+# `fig_flow_steps_only`.
 
 # ---------------------------------------------------------------- thesis charts
-for f in cycle_budget critic_value rover_dataset_sample safety_layers \
-         pnp_ambiguity; do
+for f in cycle_budget critic_value rover_dataset_sample pnp_ambiguity; do
   cp "$thesis/charts/$f.png" "$deck/public/figs/$f.png"
 done
 
@@ -54,7 +54,10 @@ if [ -d "$talk/public/figs" ]; then
     [ "${f##*.}" = svg ] && cp "$talk/public/figs/$f" "$deck/public/figs/$f" \
                          || cp "$talk/public/figs/$f.png" "$deck/public/figs/$f.png"
   done
-  for v in 250k_goalT0_drawer_FAIL_ep0 cotrain_goalT0_drawer_SUCCESS_ep0; do
+  # The first pair is the drawer comparison on the co-training slide; the rest
+  # are the three successes the demo slide plays, one per LIBERO suite.
+  for v in 250k_goalT0_drawer_FAIL_ep0 cotrain_goalT0_drawer_SUCCESS_ep0 \
+           cotrain_lib10T5_book_SUCCESS_ep0 rollout_spatialT5_ramekin_SUCCESS_ep0; do
     cp "$talk/public/videos/$v.mp4" "$talk/public/videos/$v.jpg" "$deck/public/videos/"
   done
 fi

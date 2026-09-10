@@ -29,7 +29,6 @@ charts=(
   "n8n_stack                n8n_stack"
   "agent_finetune           agent_finetune"
   "recap_pipeline           recap_pipeline"
-  "tensorrt_pipeline        tensorrt_pipeline"
   "mani_overview            mani_overview"
   "local:recap_concept      recap_concept"
   "local:vla_architecture   vla_architecture"

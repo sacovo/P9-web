@@ -9,6 +9,7 @@
     "export:notes": "slidev export-notes --output dist/p9-speaker-notes.pdf"
   },
   "dependencies": {
+    "@n8n_io/n8n-demo-component": "^1.0.20",
     "@slidev/cli": "^52.1.0",
     "@slidev/theme-default": "^0.25.0",
     "vue": "^3.5.13"

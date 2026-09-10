@@ -38,6 +38,16 @@ services:
       - ./Caddyfile:/etc/caddy/Caddyfile:ro
       - ./site:/srv/site:ro
       - ./recap:/srv/recap:ro
+      # Independent sites, one directory per domain, pulled in by the `import`
+      # at the end of the Caddyfile. Each is deployed by its own repository over
+      # an rrsync key scoped to a single sites/<domain>/public, so another
+      # project's deploy cannot reach this stack's files. That isolation is the
+      # whole reason this is one mount rather than more ./dirs above.
+      #
+      # Absolute, and deliberately outside the compose project directory: these
+      # sites outlive any single deploy of P9-web, and deploy.sh rsyncs into
+      # ~/p9/deploy with --delete.
+      - ${SITES_DIR:-/home/debian/sites}:/srv/sites:ro
       - caddy_data:/data # Let's Encrypt certs + ACME account key. Do not wipe.
       - caddy_config:/config
     networks:
