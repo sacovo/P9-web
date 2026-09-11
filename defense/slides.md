@@ -216,53 +216,37 @@ board. It is on the last-but-two slide too.
 
 ---
 
-# What P9 adds
+# Contents
 
-<div class="grid grid-cols-2 gap-10 mt-3">
-<div>
+<div class="mt-10 text-xl leading-loose">
 
-<div class="kicker mb-2">The two halves of the talk</div>
-
-<div class="takeaway">
-<strong>One language-conditioned policy</strong> instead of one model per
-substep — SmolVLA, RL post-training with RECAP, distilled to a single step and
-real time on the Jetson.
-</div>
-
-<div class="takeaway warn mt-4">
-<strong>A workflow layer over ROS2</strong> — a task as a canvas an operator can
-read, and an <strong>LLM agent</strong> on the same nodes.
-</div>
+1. **The policy** — one model, an instruction, and its own experience
+2. **Real time on the Jetson** — one chunk, from 1357 ms to 330
+3. **The workflow layer** — a task an operator can read off a canvas
+4. **The agent** — the same tools, driven by a model
+5. **On the rover** — what runs, what does not, and what comes next
 
 </div>
-<div class="text-sm">
 
-<div class="kicker mb-2">Built underneath, and in the report</div>
-
-- **The approach phase**, reimplemented in C++ — markers, a pooled PnP fit, an
-  EKF and Cartesian servoing place the gripper to **18.1 mm** median against a
-  ±25 mm requirement
-- **Safety gating** — action cancel, an operator heartbeat, a *latching*
-  software e-stop, the hardware stop
-- **Manipulator control** at 20 Hz, and depth in the observation
-
-<p class="note mt-4">
-Everything above the control loop reaches the robot only through ROS2 — topics,
-services and cancellable actions. Both phases are actions.
+<p class="note mt-10">
+Underneath all five: the approach phase in C++, safety gating, manipulator
+control at 20 Hz, depth in the observation.
 </p>
 
-</div>
-</div>
-
 <!--
-Two minutes, and it is a map rather than an argument. This slide replaces the
-architecture walk-through and the whole approach-phase part; say the two boxes
-on the left, name the three on the right, and move.
+One minute, and it is a map rather than an argument. Read the five lines, say
+the one sentence below them, and move.
+
+The two things P9 adds, said once here and not repeated: ONE
+language-conditioned policy instead of one model per substep — SmolVLA, RL
+post-training with RECAP, distilled to a single step and real time on the
+Jetson; and a WORKFLOW LAYER over ROS2 — a task as a canvas an operator can
+read, with an LLM agent on the same nodes.
 
 Inherited from P8: markers and an EKF for the approach, per-task ACT policies, a
 LeRobot <-> ROS2 adapter and a recorder. No language, and nothing above the
 substep — a task was a bespoke node someone wrote, and only its author could
-read it. That is what the two boxes on the left replace.
+read it. That is what the two additions replace.
 
 THE STACK, if you want a clause per layer: operator (a form, a canvas, a chat
 window — no terminal); workflow layer (n8n over a rosbridge WebSocket);
@@ -277,11 +261,11 @@ working pose. One square marker admits two poses — marker 88 alone gives two
 tool frames 129 degrees apart, reprojecting at 0.68 and 0.70 pixels, and the one
 OpenCV calls better is 65 mm from the truth. Pool two markers into a single
 solvePnP over eight points and the ambiguity disappears. Stored registration:
-18.1 mm median, 83 %. Own recording: 14.9 mm, 12 of 12. Why 25 mm: from that
-close the switch to be turned is unambiguous in the gripper cameras, so the
-policy manipulates ONE switch rather than choosing among five neighbours. The
-C++ rewrite took the control cycle from 964 to 59 microseconds and the tail from
-3.7 ms to 159 microseconds.
+18.1 mm median, 83 %, against a ±25 mm requirement. Own recording: 14.9 mm, 12
+of 12. Why 25 mm: from that close the switch to be turned is unambiguous in the
+gripper cameras, so the policy manipulates ONE switch rather than choosing among
+five neighbours. The C++ rewrite took the control cycle from 964 to 59
+microseconds and the tail from 3.7 ms to 159 microseconds.
 
 THE ERROR BUDGET, if asked, over 1411 still frames at thirty holds across eleven
 stations: random frame-to-frame scatter is 1.49 mm median and 0.33 mm averaged
@@ -306,7 +290,6 @@ joint configuration taught beforehand, released by a human through a form — th
 tool change in part 3 runs entirely on such moves. All three software layers
 were exercised on the running rover.
 -->
-
 ---
 layout: section
 ---
@@ -320,14 +303,18 @@ One model, an instruction, and its own experience
 </p>
 
 <!--
-Clock check: minute 5 of 45. If you are past 7, cut the FAST half of the
+Clock check: minute 4 of 45. If you are past 6, cut the FAST half of the
 knowledge-insulation slide.
 
-This part is thirteen slides and it is the technical core. Budget 14 minutes.
-The order is: what the model is (3 slides), why imitation is not enough (1),
-RECAP (4), distillation (1), what came out (4, the last two being the SnapFlow
-correction and the guidance follow-up). Making it *fast* is part 2 and is no
-longer in here.
+This part is twelve slides and it is the technical core. Budget 11 minutes.
+The order is: what the model is (1 slide), how a chunk is produced (3), RECAP
+(2), knowledge insulation (1), distillation (1), what came out (4 — the
+benchmark with the demo clips, the results, the SnapFlow correction and the
+guidance follow-up). Making it *fast* is part 2 and is no longer in here.
+
+What used to sit in here and is now in the appendix, ready if asked: the
+SmolVLA architecture diagram, its parameter counts, the critic and its honesty
+fix, and the f-plus label figure.
 
 "Can guidance survive distillation?" is the designated cut and its notes say so:
 dropping it costs no thesis-relevant claim, since the correction slide before it
@@ -387,80 +374,16 @@ If asked why SmolVLA and not pi-0 or GR00T: 450 million parameters against four
 billion plus, and roughly 0.9 GB of weights against ten. The larger models are
 not deployable on this board, full stop.
 
+If asked what is INSIDE it — the prefix, the sixteen backbone layers, the action
+expert, the parameter counts, the 83-value state token with the flattened 8×8
+depth grid — the architecture diagram and the numbers table are the first two
+appendix slides. Go there rather than describing them.
+
 The figure is the LIBERO configuration — two cameras, chunks of twenty — while
 the bullets are the rover's: three cameras and fifty actions. Different dataset,
 different config. Say so if anyone reads the boxes closely.
 -->
 
----
-
-# What is inside SmolVLA
-
-<img src="/figs/vla_architecture.svg" class="h-[430px] mx-auto mt-2" />
-
-<!--
-This diagram is the report's, and it carries the whole of part 1 in one
-picture: the prefix on the left, the backbone, the expert on the right, the two
-losses at the bottom, the red stop-gradient line between them, and the critic
-in panel (b).
-
-Do not explain it all now. Name three things and come back to it:
-  - The advantage token sits in the PREFIX, alongside the language. That is
-    what makes RECAP a change of input rather than a change of architecture.
-  - The red dashed line is knowledge insulation, four slides away.
-  - Panel (b), the critic, is the same network with the backbone truncated and
-    a value head instead of an expert. It never leaves the training cluster.
-
-The state token is the honest weak point of the depth contribution and this is
-where to concede it, before the results do. The policy CAN learn the layout,
-since the cell-to-dimension mapping is fixed, but it spends capacity on
-something an 8×8 encoder would have given it for free. That is future work in
-the report.
--->
-
----
-
-# SmolVLA, in numbers
-
-<div class="grid grid-cols-2 gap-12 mt-6">
-<div>
-
-<table>
-<tbody>
-<tr><td>Backbone</td><td>SmolVLM-2, layers 1–16 of 32</td></tr>
-<tr><td>Expert</td><td>16 layers, 0.75× width, ≈100 M</td></tr>
-<tr><td>Total</td><td><strong>≈450 M parameters</strong></td></tr>
-<tr><td>State</td><td>83 values → <strong>one token</strong></td></tr>
-</tbody>
-</table>
-
-</div>
-<div class="pt-2">
-
-<div class="takeaway warn">
-The 8×8 depth grid is 64 of those 83 numbers, <strong>flattened</strong>. Two
-cells that are neighbours on the sensor land eight apart in the vector, and
-nothing in the input says so.
-</div>
-
-</div>
-</div>
-
-<!--
-The numbers behind the previous slide, and the one design limitation worth
-admitting before it is asked.
-
-Only the first sixteen of SmolVLM-2's thirty-two layers are kept — the paper's
-own finding is that the later layers add little for control and cost latency,
-and that halving matters on the Jetson.
-
-The flattening is the honest weakness of the depth contribution. The policy can
-still learn the layout, since the mapping from zone to dimension is fixed across
-the dataset, but it spends capacity and training samples on something the sensor
-geometry would have given for free. A small convolutional encoder over the 8×8
-grid is the version that fixes it, and the change is confined to the observation
-pipeline.
--->
 ---
 
 # How one chunk is produced
@@ -654,58 +577,6 @@ not, and the results slide is about what fills that gap.
 
 ---
 
-# The critic, and making it honest
-
-<div class="grid grid-cols-5 gap-8 mt-3">
-<div class="col-span-3">
-
-<img src="/figs/critic_value.png" class="w-full" />
-
-</div>
-<div class="col-span-2 pt-1">
-
-Predicts **normalised time remaining**, as a distribution over 201 bins.
-
-<div class="takeaway warn mt-4">
-Trained on successful demonstrations only, it scores a <em>failed</em> rollout
-almost as highly as a successful one.
-</div>
-
-<div class="takeaway mt-4">
-Fix: fine-tune on the rollouts with a large constant added to the remaining
-time of failed episodes, so their target clamps to the bottom of the support.
-</div>
-
-</div>
-</div>
-
-<!--
-The figure is a real trace over one successful LIBERO rollout, with eight
-frames of that same episode above the curve. The value climbs from −0.72 to
-−0.14 as the arm reaches, grasps and transports the bowl, and the positive
-labels fall exactly in that stretch. After frame 40 it steps up once and
-flattens — the task is decided, little progress per step remains, and the whole
-tail is negative even though the episode runs on for another 39 frames.
-
-That is the point of a per-frame critic over an outcome label: within ONE
-successful episode it separates the part that made progress from the part that
-did not.
-
-The honesty problem is a distribution-shift bug, not a robotics bug: train on
-successes, evaluate on failures, get overconfident predictions. The same
-failure mode as any classifier that never saw the negative class. It is not in
-the paper we were reimplementing, and it cost a training round to find.
-
-Second one, if asked, and it is a good story: a critic trained without state
-dropout learned to read the GRIPPER channel instead of the scene. The two
-largest jumps in its value curve sat within a fifth of a frame of the two
-gripper transitions. Zeroing the state for 20 % of samples removes the
-shortcut. A critic that judges from IMAGES is the only kind that could ever
-supply a success signal on real hardware, where there is no simulator to ask.
--->
-
----
-
 # Two knobs: the threshold, and guidance
 
 <div class="grid grid-cols-5 gap-8 mt-3">
@@ -750,6 +621,12 @@ moved over 50 frames minus that fixed budget. Progress faster than the clock is
 positive. That is also why the critic has to be honest — it is the only thing
 in the formula carrying information.
 
+The honesty problem itself is an appendix slide, with the value trace: trained
+on successful demonstrations only, the critic scores a FAILED rollout almost as
+highly as a successful one, and the fix is to fine-tune on the rollouts with a
+large constant added to the remaining time of failed episodes. Say the sentence
+here if it comes up; show the slide only if pressed.
+
 The guidance analogy for a non-specialist: the same trick image generators use
 to enforce "more prompt", pointed at "more good behaviour".
 
@@ -770,8 +647,7 @@ blue one is v_pos, and the black one is what actually gets integrated. Its tip
 slides along the dashed line as w moves — inside the segment is interpolation,
 past the blue tip is extrapolation, and the line turns yellow there.
 
-This is the mechanism behind the f-plus result on the last slide of this
-part. If the labels are wrong, v_pos - v_unc points away from behaviour the
+This is the mechanism behind the f-plus result in the appendix. If the labels are wrong, v_pos - v_unc points away from behaviour the
 task needs, and every one of these arrows is then pointing the wrong way, in
 proportion to w. Say that here so the sweep on that slide is already familiar.
 
@@ -975,11 +851,13 @@ points. The proxy is not the objective.
 -->
 
 ---
+routeAlias: policy-demo
+---
 
 # The benchmark: LIBERO
 
-<div class="grid grid-cols-2 gap-10 mt-4">
-<div class="pt-2">
+<div class="grid grid-cols-5 gap-8 mt-3">
+<div class="col-span-2 pt-1">
 
 A MuJoCo suite of **language-conditioned** manipulation tasks on a simulated
 7-DoF arm. Each task pairs a scene with an instruction and human demonstrations.
@@ -997,16 +875,20 @@ A MuJoCo suite of **language-conditioned** manipulation tasks on a simulated
 Success is the task's goal predicate holding at termination.</p>
 
 </div>
-<div class="flex items-center">
+<div class="col-span-3 flex items-center">
 
-<Clip src="cotrain_lib10T5_book_SUCCESS_ep0" verdict="success" label="long — book into the caddy" />
+<div class="grid grid-cols-3 gap-4 w-full">
+  <Clip src="rollout_spatialT5_ramekin_SUCCESS_ep0" verdict="success" label="spatial — pick and place" />
+  <Clip src="cotrain_goalT0_drawer_SUCCESS_ep0" verdict="success" label="goal — open the drawer" />
+  <Clip src="cotrain_lib10T5_book_SUCCESS_ep0" verdict="success" label="long — book into the caddy" />
+</div>
 
 </div>
 </div>
 
 <!--
-Half a minute, and it exists because the next three slides are meaningless
-without it. Let the clip run while you talk.
+Two minutes. The benchmark and the demo are one slide now: say what LIBERO is
+while the three clips run, and let them keep running.
 
 Each suite varies exactly ONE factor, which is what makes a per-suite rate
 informative rather than an average: spatial varies placement with the objects
@@ -1014,15 +896,31 @@ fixed, object varies the objects with the layout fixed, goal varies the
 instruction with both fixed, and long combines them into tasks that chain
 subgoals.
 
-Two things to say while the clip plays: this is the LIBERO robot and not the
-rover, which is the caveat the whole section carries; and the policy is given
-the sentence, so the same weights serve all four suites.
+The clips are three of the four suites under ONE set of weights — the same
+model, advantage-conditioned and distilled to a single step, and the only thing
+that changes is the sentence it is given: "pick up the ramekin and put it in the
+tray", "open the middle drawer of the cabinet", "pick up the book and place it
+in the back compartment of the caddy". That is the whole point of replacing the
+per-task ACT models, and it is visible here in a way a table cannot show.
+
+Say the caveat while they play: this is the LIBERO robot and not the rover,
+which is what the whole section carries. The policy works, and it works in
+simulation.
 
 If asked why a benchmark at all: it is public, fixed and repeatable, and the
 rover is none of those — its arm changes between sessions and a task can fail
 for reasons that have nothing to do with the policy.
--->
 
+If someone asks whether the clips are cherry-picked: yes, in that they are
+successes. The rates behind them are on the next slide — 80.0, 86.2 and 38.2
+per cent — and the failure that matters is the two-subgoal task, where rollout
+post-training makes things worse and only demonstrations repair it. The paired
+clips for that are on the companion site, not in the deck.
+
+Do not run this from the website. The clips are in the deck and loop silently
+on their own; opening a browser here costs a minute and buys nothing. The
+workflow demo is still at the end, after the conclusions.
+-->
 ---
 
 # What it is worth: LIBERO
@@ -1278,99 +1176,6 @@ being regressed, so the loss barely rewards attending to w.
 
 
 ---
-
-# f⁺ decides what “negative” means
-
-<div class="grid grid-cols-2 gap-8 mt-3">
-<div>
-
-<img src="/figs/fig_labels.png" class="w-full" />
-
-<div class="takeaway warn mt-3 text-sm">
-At f⁺ = 0.3, <strong>31 % of all frames</strong> are negative labels sitting on
-<em>successful</em> episodes — the approach and transport motions the task
-needs.
-</div>
-
-</div>
-<div>
-
-<img src="/figs/fig_dose_slide.png" class="w-full" />
-
-<div class="takeaway mt-3 text-sm">
-And then guidance makes it <strong>worse</strong>, monotonically in <em>w</em>:
-it extrapolates <em>away</em> from behaviour the task requires.
-</div>
-
-</div>
-</div>
-
-<!--
-The two halves are cause and effect, and this is the finding that goes beyond
-the recipe we started from.
-
-Left: what the threshold does to the DATA, before any policy is trained. The
-red block is the damage — frames inside successful episodes that get labelled
-negative.
-
-Right: what that does to the POLICY. At f-plus 0.3 the entire guidance sweep
-sits below the base. At 0.4 the unguided policy still edges past it, but
-guidance erodes it steadily down to 65.4 at w = 2. At 0.8 both the unguided
-policy and moderate guidance improve on the base. That is the setting used
-throughout.
-
-The failure being MONOTONE in w is what tells you the guidance DIRECTION is
-broken rather than the result being noisy.
-
-The diagnostic that confirms it, if asked: force the negative token at
-inference. At f-plus 0.3 the negative token scores HIGHER than the positive one
-on two suites — 66.4 against 66.0, 76.4 against 73.6. With seven of every ten
-successful frames labelled negative, the token never carried a good-versus-bad
-distinction at all, so guidance had nothing to amplify.
-
-Practical rule out of this: set the threshold permissively. The other error —
-positive labels on failed episodes — is much cheaper.
--->
-
----
-routeAlias: policy-demo
----
-
-# Demo: the policy, running
-
-<div class="grid grid-cols-3 gap-6 mt-4">
-  <Clip src="rollout_spatialT5_ramekin_SUCCESS_ep0" verdict="success" label="spatial — pick and place" />
-  <Clip src="cotrain_goalT0_drawer_SUCCESS_ep0" verdict="success" label="goal — open the drawer" />
-  <Clip src="cotrain_lib10T5_book_SUCCESS_ep0" verdict="success" label="long — book into the caddy" />
-</div>
-
-<!--
-Ninety seconds, and it sits here rather than at the end because it is what the
-three preceding tables mean. The honest framing: the policy works, and it works
-in simulation.
-
-Say the line that is no longer on the slide: three suites, one set of weights,
-the instruction as the only thing that changes — and LIBERO, not the arm.
-
-Say what is the same across the three and what differs. The same: one model,
-one set of weights, advantage-conditioned, distilled to a single step. The
-difference is the sentence it is given — "pick up the ramekin and put it in the
-tray", "open the middle drawer of the cabinet", "pick up the book and place it
-in the back compartment of the caddy". That is the whole point of replacing the
-per-task ACT models, and it is visible here in a way a table cannot show.
-
-If someone asks whether these are cherry-picked: yes, in that they are
-successes. The rates behind them are on the LIBERO slide — 80.0, 86.2 and 38.2
-per cent — and the failure that matters is the two-subgoal task, where rollout
-post-training makes things worse and only demonstrations repair it. The paired
-clips for that are on the companion site, not in the deck.
-
-Do not run this from the website. The clips are in the deck and loop silently
-on their own; opening a browser here costs a minute and buys nothing. The
-workflow demo is still at the end, after the conclusions.
--->
-
----
 layout: section
 ---
 
@@ -1383,7 +1188,7 @@ Getting one chunk from 1357 ms to 330
 </p>
 
 <!--
-Clock check: minute 19 of 45. Two slides, three minutes.
+Clock check: minute 15 of 45. Two slides, three minutes.
 
 This is its own contribution in the report and it is the one an engineer in the
 room will want. The arc is two sentences: the policy as trained does not fit
@@ -1510,9 +1315,9 @@ A task an operator can read off a canvas
 </p>
 
 <!--
-Clock check: minute 22 of 45.
+Clock check: minute 18 of 45.
 
-Under 19 means you rushed part 1. Past 24, drop the "what n8n is not" slide and
+Under 15 means you rushed part 1. Past 20, drop the "what n8n is not" slide and
 compress the tool change into one sentence on the maintenance slide.
 
 Parts 3 and 4 are thirteen slides in 14 minutes. They are less mathematical and
@@ -1833,7 +1638,7 @@ The same tools, driven by a model — and then by a model on board
 </p>
 
 <!--
-Clock check: minute 29 of 45. Six slides, seven minutes.
+Clock check: minute 25 of 45. Six slides, seven minutes.
 
 The arc: an agent is worth having for the open-ended half of the work; it must
 not drive the hardware; and it can be moved onto the rover for free if you are
@@ -2167,7 +1972,7 @@ What runs, what does not, and what I would do next
 </p>
 
 <!--
-Clock check: minute 36 of 45. Seven slides and then the demo — these are short,
+Clock check: minute 32 of 45. Seven slides and then the demo — these are short,
 and they are the ones that decide what the room remembers.
 
 Do not speed up here. If you are late, drop "What I would keep from this" and
@@ -2778,7 +2583,8 @@ PREPARED ANSWERS
   and the rover-versus-LIBERO gap all trace back to how much data could be
   recorded and how good it was.
 
-BACKUP SLIDES FOLLOW: engine accuracy · latency table · guidance baking ·
+BACKUP SLIDES FOLLOW: the SmolVLA architecture and its numbers · the critic ·
+engine accuracy · latency table · the f-plus labels · guidance baking ·
 the label composition · the n8n node package · agent transcripts.
 -->
 
@@ -2789,6 +2595,127 @@ layout: section
 <div class="kicker mb-4">Backup</div>
 
 # Appendix
+
+---
+
+# What is inside SmolVLA
+
+<img src="/figs/vla_architecture.svg" class="h-[430px] mx-auto mt-2" />
+
+<!--
+This diagram is the report's, and it carries the whole of part 1 in one
+picture: the prefix on the left, the backbone, the expert on the right, the two
+losses at the bottom, the red stop-gradient line between them, and the critic
+in panel (b).
+
+Do not explain it all now. Name three things and come back to it:
+  - The advantage token sits in the PREFIX, alongside the language. That is
+    what makes RECAP a change of input rather than a change of architecture.
+  - The red dashed line is knowledge insulation, its own slide in part 1.
+  - Panel (b), the critic, is the same network with the backbone truncated and
+    a value head instead of an expert. It never leaves the training cluster.
+
+The state token is the honest weak point of the depth contribution and this is
+where to concede it, before the results do. The policy CAN learn the layout,
+since the cell-to-dimension mapping is fixed, but it spends capacity on
+something an 8×8 encoder would have given it for free. That is future work in
+the report.
+-->
+
+---
+
+# SmolVLA, in numbers
+
+<div class="grid grid-cols-2 gap-12 mt-6">
+<div>
+
+<table>
+<tbody>
+<tr><td>Backbone</td><td>SmolVLM-2, layers 1–16 of 32</td></tr>
+<tr><td>Expert</td><td>16 layers, 0.75× width, ≈100 M</td></tr>
+<tr><td>Total</td><td><strong>≈450 M parameters</strong></td></tr>
+<tr><td>State</td><td>83 values → <strong>one token</strong></td></tr>
+</tbody>
+</table>
+
+</div>
+<div class="pt-2">
+
+<div class="takeaway warn">
+The 8×8 depth grid is 64 of those 83 numbers, <strong>flattened</strong>. Two
+cells that are neighbours on the sensor land eight apart in the vector, and
+nothing in the input says so.
+</div>
+
+</div>
+</div>
+
+<!--
+The numbers behind the previous slide, and the one design limitation worth
+admitting before it is asked.
+
+Only the first sixteen of SmolVLM-2's thirty-two layers are kept — the paper's
+own finding is that the later layers add little for control and cost latency,
+and that halving matters on the Jetson.
+
+The flattening is the honest weakness of the depth contribution. The policy can
+still learn the layout, since the mapping from zone to dimension is fixed across
+the dataset, but it spends capacity and training samples on something the sensor
+geometry would have given for free. A small convolutional encoder over the 8×8
+grid is the version that fixes it, and the change is confined to the observation
+pipeline.
+-->
+---
+
+# The critic, and making it honest
+
+<div class="grid grid-cols-5 gap-8 mt-3">
+<div class="col-span-3">
+
+<img src="/figs/critic_value.png" class="w-full" />
+
+</div>
+<div class="col-span-2 pt-1">
+
+Predicts **normalised time remaining**, as a distribution over 201 bins.
+
+<div class="takeaway warn mt-4">
+Trained on successful demonstrations only, it scores a <em>failed</em> rollout
+almost as highly as a successful one.
+</div>
+
+<div class="takeaway mt-4">
+Fix: fine-tune on the rollouts with a large constant added to the remaining
+time of failed episodes, so their target clamps to the bottom of the support.
+</div>
+
+</div>
+</div>
+
+<!--
+The figure is a real trace over one successful LIBERO rollout, with eight
+frames of that same episode above the curve. The value climbs from −0.72 to
+−0.14 as the arm reaches, grasps and transports the bowl, and the positive
+labels fall exactly in that stretch. After frame 40 it steps up once and
+flattens — the task is decided, little progress per step remains, and the whole
+tail is negative even though the episode runs on for another 39 frames.
+
+That is the point of a per-frame critic over an outcome label: within ONE
+successful episode it separates the part that made progress from the part that
+did not.
+
+The honesty problem is a distribution-shift bug, not a robotics bug: train on
+successes, evaluate on failures, get overconfident predictions. The same
+failure mode as any classifier that never saw the negative class. It is not in
+the paper we were reimplementing, and it cost a training round to find.
+
+Second one, if asked, and it is a good story: a critic trained without state
+dropout learned to read the GRIPPER channel instead of the scene. The two
+largest jumps in its value curve sat within a fifth of a frame of the two
+gripper transitions. Zeroing the state for 20 % of samples removes the
+shortcut. A critic that judges from IMAGES is the only kind that could ever
+supply a success signal on real hardware, where there is no simulator to ask.
+-->
 
 ---
 
@@ -3048,6 +2975,61 @@ half of the answer.
 For the next revision of the report, the cheap fix is to stop the noun doing
 two jobs: "…a distillation term that matches the single-step jump to the same
 weights' own two half-steps."
+-->
+
+---
+
+# f⁺ decides what “negative” means
+
+<div class="grid grid-cols-2 gap-8 mt-3">
+<div>
+
+<img src="/figs/fig_labels.png" class="w-full" />
+
+<div class="takeaway warn mt-3 text-sm">
+At f⁺ = 0.3, <strong>31 % of all frames</strong> are negative labels sitting on
+<em>successful</em> episodes — the approach and transport motions the task
+needs.
+</div>
+
+</div>
+<div>
+
+<img src="/figs/fig_dose_slide.png" class="w-full" />
+
+<div class="takeaway mt-3 text-sm">
+And then guidance makes it <strong>worse</strong>, monotonically in <em>w</em>:
+it extrapolates <em>away</em> from behaviour the task requires.
+</div>
+
+</div>
+</div>
+
+<!--
+The two halves are cause and effect, and this is the finding that goes beyond
+the recipe we started from.
+
+Left: what the threshold does to the DATA, before any policy is trained. The
+red block is the damage — frames inside successful episodes that get labelled
+negative.
+
+Right: what that does to the POLICY. At f-plus 0.3 the entire guidance sweep
+sits below the base. At 0.4 the unguided policy still edges past it, but
+guidance erodes it steadily down to 65.4 at w = 2. At 0.8 both the unguided
+policy and moderate guidance improve on the base. That is the setting used
+throughout.
+
+The failure being MONOTONE in w is what tells you the guidance DIRECTION is
+broken rather than the result being noisy.
+
+The diagnostic that confirms it, if asked: force the negative token at
+inference. At f-plus 0.3 the negative token scores HIGHER than the positive one
+on two suites — 66.4 against 66.0, 76.4 against 73.6. With seven of every ten
+successful frames labelled negative, the token never carried a good-versus-bad
+distinction at all, so guidance had nothing to amplify.
+
+Practical rule out of this: set the threshold permissively. The other error —
+positive labels on failed episodes — is much cheaper.
 -->
 
 ---

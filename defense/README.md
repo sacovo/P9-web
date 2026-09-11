@@ -16,32 +16,38 @@ them.
 
 ## Structure
 
-43 talk slides and 15 backup, in five parts, plus a cover, six dividers
-and a closing slide — 66 in all. Every slide carries presenter notes, and the notes
+38 talk slides and 19 backup, in five parts, plus a cover, six dividers
+and a closing slide — 65 in all. Every slide carries presenter notes, and the notes
 on the dividers carry a **clock check**: where you should be at that point, and
 what to drop first if you are late.
 
 | Part | Talk slides | Reach it at |
 |---|---:|---:|
-| Opening — the rover, the panel, the questions, what P9 adds | 4 | 0 min |
-| 1 — the policy: SmolVLA, RECAP, SnapFlow, LIBERO, the rollout demo | 17 | 5 min |
-| 2 — real time on the Jetson | 2 | 19 min |
-| 3 — the workflow layer | 6 | 22 min |
-| 4 — the agent, and the fine-tuned local model | 6 | 29 min |
-| 5 — on the rover, the ERC, closing, and the demo | 8 | 36 min |
+| Opening — the rover, the panel, the questions, the contents | 4 | 0 min |
+| 1 — the policy: SmolVLA, RECAP, SnapFlow, LIBERO with the rollout demo | 12 | 4 min |
+| 2 — real time on the Jetson | 2 | 15 min |
+| 3 — the workflow layer | 6 | 18 min |
+| 4 — the agent, and the fine-tuned local model | 6 | 25 min |
+| 5 — on the rover, the ERC, closing, and the demo | 8 | 32 min |
 
 The parts follow the report's contributions rather than the order the system is
 built in, so a reader of the report can map one onto the other. The deck is cut
 to the two contributions the defence is actually about — the policy (parts 1–2)
 and the workflow layer with its agent (parts 3–4). Everything else the report
-contributes is **one slide of bullets in the opening**, *What P9 adds*: the
-approach phase (§3, with its accuracy and its error budget), the four stopping
-layers (§2.1.4), the layer map (§2.4) and the manipulator control. Their numbers
-live in that slide's presenter notes, which are written to be read out as
-answers in the Q&A rather than presented.
+contributes is **one line under the table of contents**: the approach phase (§3,
+with its accuracy and its error budget), the four stopping layers (§2.1.4), the
+layer map (§2.4) and the manipulator control. Their numbers live in that slide's
+presenter notes, which are written to be read out as answers in the Q&A rather
+than presented.
 
-The deck is paced for about 39 minutes and the live demo at the end is the other
-two, which puts a full run at 41 — **inside the 45-minute ceiling** with room to
+Part 1 was cut to its spine: the SmolVLA architecture diagram, the parameter
+table, the critic slide and the f⁺ label figure are all in the appendix now, and
+the rollout demo is folded into the LIBERO benchmark slide. The part-1 divider's
+notes say which sentence to substitute for each, and which appendix slide to
+jump to if the question comes.
+
+The deck is paced for about 35 minutes and the live demo at the end is the other
+two, which puts a full run at 37 — **inside the 45-minute ceiling** with room to
 spare, and comfortably so without the demo. The designated cut if a part
 overruns anyway is *Can guidance survive distillation?*, whose notes say as much;
 dropping it costs no thesis-relevant claim, since the SnapFlow correction before
@@ -64,10 +70,11 @@ being reachable from the room.
 
 There are two demos and they sit apart. The **policy** demo plays three LIBERO
 rollouts through `Clip.vue` — one success per suite, from the deck's own
-`public/videos` — and sits inside part 1, straight after the results it
-demonstrates; the results slide links to it with `<Link to="policy-demo">`, so
-the slide carries a `routeAlias`. The **live** demo is a single slide at the end,
-after the conclusions, and it is four **buttons** rather than a description —
+`public/videos` — and is folded into *The benchmark: LIBERO* in part 1, so the
+suites are explained while the clips run and the results tables follow. That
+slide keeps the `policy-demo` `routeAlias`, so `<Link to="policy-demo">` still
+resolves. The **live** demo is a single slide at the end, after the conclusions,
+and it is four **buttons** rather than a description —
 click one and the site opens in a tab. Take the gallery first
 (`/demos/rover/#workflows`), which renders its canvases from JSON and cannot
 fail in the room; the live simulated rover is further up the same page and only
