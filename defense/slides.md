@@ -848,11 +848,6 @@ DROPPABLE: the right-hand column. The left half is the load-bearing part.
 
 # SnapFlow: ten steps into one
 
-<div class="snapflow-loss mt-1">
-
-$$\mathcal{L} = \underbrace{\bigl\lVert f_\theta^{\,\tau\to\tau'} - \mathrm{sg}\bigl[f_\theta^{\,\text{2 half-steps}}\bigr]\bigr\rVert^2}_{\text{consistency}} \;+\; \underbrace{\bigl\lVert v_\theta - (A-\epsilon) \bigr\rVert^2}_{\text{flow matching}}$$
-
-</div>
 
 <div class="grid grid-cols-5 gap-8 mt-3">
 <div class="col-span-2 pt-1">
@@ -860,10 +855,23 @@ $$\mathcal{L} = \underbrace{\bigl\lVert f_\theta^{\,\tau\to\tau'} - \mathrm{sg}\
 Ten Euler steps distilled into a **single time-conditioned jump**, with the
 model as its own teacher.
 
-<p class="note mt-3">A second time input <em>s</em> through an MLP initialised to
-zeros, so the student starts as its teacher.</p>
+<div class="snapflow-loss my-4">
 
-<div class="takeaway warn mt-4 text-sm">
+$$\mathcal{L} = \underbrace{\bigl\lVert f_\theta^{\,\tau\to\tau'} - \mathrm{sg}\bigl[f_\theta^{\,\text{2 half-steps}}\bigr]\bigr\rVert^2}_{\text{consistency}} \;+\; \underbrace{\bigl\lVert v_\theta - (A-\epsilon) \bigr\rVert^2}_{\text{flow matching}}$$
+
+</div>
+
+<div class="legend mt-3 text-xs">
+
+| | |
+|---|---|
+| <em>f</em><sub>θ</sub> | student = one jump τ→τ′ · teacher = the same weights, in two half-steps |
+| sg | stop-gradient: the teacher branch is a frozen target |
+| <em>A</em> − <em>ε</em> | demonstrated chunk minus its noise — the straight line's velocity |
+
+</div>
+
+<div class="takeaway warn mt-3 text-sm">
 Two half-steps beat one whole, so the teacher is always slightly ahead — and
 improves with the student.
 </div>
@@ -877,6 +885,19 @@ improves with the student.
 </div>
 
 <!--
+The legend under the loss is there so nobody has to ask; do not read it out.
+The longer answers if someone does: f_theta is the one model wearing both hats
+— the student takes a single jump from tau to tau-prime, the teacher covers the
+same interval in two half-steps. sg[.] is the stop-gradient: no gradient flows
+back through the teacher branch, so the target is frozen for that update and the
+student moves onto the teacher rather than the teacher drifting onto the
+student. Without it both ends could meet by collapsing anywhere, and the trivial
+constant solution has zero consistency loss. v_theta and A - epsilon are the
+flow-matching term from earlier, kept in the objective so the field itself stays
+valid while it is being distilled: A is the demonstrated action chunk, epsilon
+its noise sample, and A - epsilon is the velocity of the straight line between
+them.
+
 Everything before this made the policy BETTER. This is the one that makes it
 FASTER. Same 2-D example as the flow-matching slide, one noise sample, and it
 builds in four beats — let it loop once, then walk it with the beat buttons.
@@ -1022,10 +1043,10 @@ for reasons that have nothing to do with the policy.
 
 <p v-click class="note mt-2"><sup>*</sup>Corrected after the report: the
 target-time head was disabled by its initialisation, so the figures on the left
-measure SnapFlow with its mechanism switched off. Next slide.</p>
+measure SnapFlow with its mechanism switched off.</p>
 
 <div v-click class="grid grid-cols-3 gap-6 mt-6 text-sm">
-<div class="takeaway"><strong>1.</strong> The pre-training recipe is the largest effect.</div>
+<div class="takeaway"><strong>1.</strong> KI has the largest effect.</div>
 <div class="takeaway warn"><strong>2.</strong> Rollouts help — except on <code>long</code>.</div>
 <div class="takeaway"><strong>3.</strong> Demonstrations repair that.</div>
 </div>
@@ -1077,10 +1098,10 @@ separates nothing and it is excluded rather than printed as a row of zeros.
 
 ---
 
-# A bug in SnapFlow, and what it was hiding
+# SnapFlow correction
 
 <div class="grid grid-cols-5 gap-8 mt-3">
-<div class="col-span-3">
+<div class="col-span-5">
 
 <table class="mt-1 text-sm">
 <thead>
@@ -1100,24 +1121,6 @@ $$\text{MLP}(s) = W_2\,\sigma(W_1 s + b_1) + b_2, \qquad W_1 = W_2 = 0$$
 <p class="note">Zeroing <em>both</em> layers makes it identity at step 0 — and
 permanently constant: <span class="mono">SiLU(0)=0</span> kills the gradient to
 <em>W₂</em>, and <em>W₂</em>=0 kills it to <em>W₁</em>. Only <em>b₂</em> ever moves.</p>
-
-</div>
-<div class="col-span-2 pt-1">
-
-<div class="takeaway warn">
-Every distilled checkpoint had <strong>ƒ(x,t,s) independent of s</strong>. The
-one-step jump and the instantaneous field were bit-identical.
-</div>
-
-<div v-click class="takeaway mt-4">
-Fixed, distillation costs <strong>nothing</strong>: 69.2 against the ten-step
-teacher's 68.1. The 2-point penalty was the disabled mechanism.
-</div>
-
-<div v-click class="takeaway mt-4 text-sm">
-Best at <strong>w = 0</strong> on all three suites — which is also the cheapest,
-since guidance runs the prefix twice.
-</div>
 
 </div>
 </div>
@@ -1163,9 +1166,8 @@ The gain is entirely on the two short-horizon suites.
 </thead>
 <tbody>
 <tr><td class="dim">ten-step teacher</td><td class="dim">73.4</td><td class="dim">80.0</td><td class="dim">+6.6</td></tr>
-<tr v-click><td>one-step, ordinary CFG</td><td><strong>80.6</strong></td><td>80.6</td><td class="neg">−0.0</td></tr>
-<tr v-click><td>+ guidance baked in</td><td>73.6</td><td>73.6</td><td class="neg">−0.0</td></tr>
-<tr v-click><td>+ conditioned on <em>w</em></td><td colspan="3" class="dim">ignores its own input</td></tr>
+<tr v-click><td>one-step, ordinary CFG</td><td><strong>80.6</strong></td><td>80.6</td><td class="neg">0.0</td></tr>
+<tr v-click><td>+ guidance baked in</td><td>73.6</td><td>73.6</td><td class="neg">0.0</td></tr>
 <tr v-click><td>+ direction supervised <span class="dim">(PDM)</span></td><td>74.8</td><td>79.2</td><td><strong>+4.4</strong></td></tr>
 </tbody>
 </table>
@@ -1179,20 +1181,50 @@ fixes both: <strong>0.50</strong> aligned, <strong>1.06×</strong>.</p>
 </div>
 <div class="col-span-2 pt-1">
 
-<div v-click class="takeaway">
-Guidance <strong>can</strong> be transplanted into one step. The obstacle is
-branch-level under-identification, not one-step generation.
-</div>
+<div class="kicker mb-2">Why baking a weight fails</div>
 
-<div v-click class="takeaway warn mt-4">
-And it buys <strong>nothing</strong>: 79.2 against 80.6 unguided. The gain is
-paid for by a weaker baseline.
-</div>
+<svg width="250" height="248" viewBox="0 0 210 208" style="display:block;margin:0 auto;max-width:100%">
+  <defs>
+    <marker id="ab" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="4.5" markerHeight="4.5" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="#2a78d6"/></marker>
+    <marker id="ar" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="4.5" markerHeight="4.5" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="#c70101"/></marker>
+    <marker id="ak" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="4.5" markerHeight="4.5" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="#000"/></marker>
+  </defs>
 
-<div v-click class="takeaway mt-4 text-sm">
-Deployed: plain distillation at <strong>w = 0</strong>. One prefix pass, one
-denoising step.
-</div>
+  <g transform="translate(0,0)">
+    <text x="0" y="8" style="font-size:8px;fill:#767573;letter-spacing:.04em">NAIVE — BLEND ONLY</text>
+    <line x1="14" y1="84" x2="140" y2="48" stroke="#fde70e" stroke-width="6" stroke-linecap="round"/>
+    <line x1="14" y1="84" x2="118" y2="28" stroke="#2a78d6" stroke-width="1.2" marker-end="url(#ab)"/>
+    <line x1="14" y1="84" x2="174" y2="74" stroke="#c70101" stroke-width="1.2" marker-end="url(#ar)"/>
+    <line x1="14" y1="84" x2="140" y2="48" stroke="#000" stroke-width="1.6" marker-end="url(#ak)"/>
+    <text x="122" y="24" style="font-size:9px;fill:#2a78d6;font-style:italic">v⁺</text>
+    <text x="180" y="78" style="font-size:9px;fill:#c70101;font-style:italic">v⁻</text>
+    <text x="128" y="66" style="font-size:9px;font-style:italic">v(cfg)</text>
+  </g>
+
+  <g transform="translate(0,112)">
+    <text x="0" y="8" style="font-size:8px;fill:#767573;letter-spacing:.04em">PDM — v⁺ AND d</text>
+    <line x1="14" y1="84" x2="118" y2="28" stroke="#fde70e" stroke-width="6" stroke-linecap="round"/>
+    <line x1="174" y1="74" x2="118" y2="28" stroke="#fde70e" stroke-width="6" stroke-linecap="round"/>
+    <line x1="14" y1="84" x2="118" y2="28" stroke="#2a78d6" stroke-width="1.6" marker-end="url(#ab)"/>
+    <line x1="14" y1="84" x2="174" y2="74" stroke="#c70101" stroke-width="1.2" marker-end="url(#ar)"/>
+    <line x1="174" y1="74" x2="118" y2="28" stroke="#2a78d6" stroke-width="1.6" marker-end="url(#ab)"/>
+    <text x="122" y="24" style="font-size:9px;fill:#2a78d6;font-style:italic">v⁺</text>
+    <text x="180" y="78" style="font-size:9px;fill:#c70101;font-style:italic">v⁻</text>
+    <text x="150" y="44" style="font-size:9px;fill:#2a78d6;font-style:italic">d</text>
+  </g>
+</svg>
+
+
+<p class="note mt-2 text-xs">
+Li et al., <em>Rethinking Classifier-Free Guidance in On-Policy Diffusion
+Distillation</em>, 2026 —
+<a href="https://rethinking-cfg-opd.github.io/">rethinking-cfg-opd.github.io</a>.
+<span class="dim">Not in the report.</span>
+</p>
+
 
 </div>
 </div>
@@ -1226,6 +1258,22 @@ which is what the flat rows alone would suggest.
 If asked what the measurement is: for each policy, how far its action chunk
 moves when w rises, compared to how far the teacher's moves. Direction and
 magnitude, at 12 states, 32 noise draws each.
+
+The figure, if you walk through it: three vectors from a common origin. The
+positive branch v-plus, the unconditional branch v-minus, and the blend the
+sampler actually uses. Baking supervises ONLY the blend (highlighted, top), so
+an error on one branch can be cancelled by an equal and opposite error on the
+other -- a whole line of equally optimal solutions, and the one training picks
+holds only at the weight it was trained at. PDM (bottom) constrains the positive
+prediction AND the direction between the branches, which pins both. Redrawn from
+Li et al. (the footnote), who name the failure negative branch asymmetry; the w-conditioned
+row is gone from the table because it has no reported number -- it never learned
+to use its w input.
+
+A conditioned row is not on the slide on purpose. If someone asks whether you
+tried making w an input: yes, and the policy ignored it. The blends at different
+w differ only by w times the branch difference, which is small next to the field
+being regressed, so the loss barely rewards attending to w.
 -->
 
 
@@ -2336,37 +2384,21 @@ training input.
 
 <div class="takeaway">
 <div class="kicker mb-2">Workflow layer</div>
-<strong>Ran without a failure</strong>, across several tasks — and earned
-automation points beyond the maintenance panel.
+<strong>Ran without a failure</strong>
 </div>
 
 <div class="takeaway">
 <div class="kicker mb-2">Approach phase</div>
-<strong>Aligned as measured.</strong> Late, though: a configuration and rules
-problem, part of it ours, made under pre-event pressure.
+<strong>Aligned as measured.</strong> 
 </div>
 
 <div class="takeaway warn">
 <div class="kicker mb-2">The policy</div>
-<strong>Never ran.</strong> A gripper camera had degraded, so the substep was
-operated by hand rather than risk the manipulator.
+<strong>Not tried.</strong> 
 </div>
 
-</div>
 
-<div class="grid grid-cols-2 gap-10 mt-8">
-<div class="takeaway">
-Autonomy points scored on the <strong>maintenance task</strong>, and automation
-points on others.
-</div>
-<div class="pt-1">
 
-<p class="note">
-The two deterministic layers did their job. The learned one was stopped by the
-camera fault of two slides back — not by the policy, and not by the Jetson.
-</p>
-
-</div>
 </div>
 
 <!--
