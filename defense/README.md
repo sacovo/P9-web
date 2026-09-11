@@ -16,8 +16,11 @@ them.
 
 ## Structure
 
-38 talk slides and 19 backup, in five parts, plus a cover, six dividers
-and a closing slide — 65 in all. Every slide carries presenter notes, and the notes
+35 talk slides and 22 backup, in five parts, plus a cover, six dividers
+and a closing slide — 65 in all. The slide number in the bottom-right counts
+only the talk: it reads `n / 42` up to the appendix divider, which carries no
+number, and the backups after it are `A1`, `A2`, … so the room never sees a
+total inflated by material it will not be shown. Every slide carries presenter notes, and the notes
 on the dividers carry a **clock check**: where you should be at that point, and
 what to drop first if you are late.
 
@@ -28,7 +31,7 @@ what to drop first if you are late.
 | 2 — real time on the Jetson | 2 | 15 min |
 | 3 — the workflow layer | 6 | 18 min |
 | 4 — the agent, and the fine-tuned local model | 6 | 25 min |
-| 5 — on the rover, the ERC, closing, and the demo | 8 | 32 min |
+| 5 — on the rover, the research questions, and the demo | 5 | 32 min |
 
 The parts follow the report's contributions rather than the order the system is
 built in, so a reader of the report can map one onto the other. The deck is cut
@@ -46,10 +49,17 @@ the rollout demo is folded into the LIBERO benchmark slide. The part-1 divider's
 notes say which sentence to substitute for each, and which appendix slide to
 jump to if the question comes.
 
-The deck is paced for about 35 minutes and the live demo at the end is the other
-two, which puts a full run at 37 — **inside the 45-minute ceiling** with room to
-spare, and comfortably so without the demo. The designated cut if a part
-overruns anyway is *Can guidance survive distillation?*, whose notes say as much;
+Part 5 was cut the same way. *Which policy the rover competes with*, *At the
+competition* and *What I would keep from this* are in the appendix; the ERC
+outcome is now one click on *The three questions, answered*, and that slide's
+notes carry the three sentences it replaces.
+
+The dividers put part 5 at minute 32 and it holds four short slides, so a run
+lands in the low thirties without the live demo and two or three more with it —
+**inside the 45-minute ceiling** with real room to spare. The per-divider clock
+checks are the contract; the total is an estimate, so rehearse it once. The
+designated cut if a part overruns anyway is *Can guidance survive
+distillation?*, whose notes say as much;
 dropping it costs no thesis-relevant claim, since the SnapFlow correction before
 it carries the one that matters. That is also why the demo sits *after* the
 conclusions: skipping it costs nothing either.

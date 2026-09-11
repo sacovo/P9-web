@@ -37,10 +37,10 @@ Autonomous manipulation and workflow automation for the FHNW Mars Rover
 <img src="/img/fhnw-logo.png" class="absolute right-12 bottom-10 w-48" />
 
 <!--
-45 minutes for the talk, 15–20 for questions. The deck is paced for 41 and the
-live demo at the end is the other two, so the ceiling is met with the demo and
-comfortably beaten without it. The clock check on each of the five dividers
-says where you should be and what to drop first.
+45 minutes for the talk, 15–20 for questions. The dividers put part 5 at
+minute 32 and it now holds four short slides, so a run lands in the low
+thirties without the live demo and two or three more with it. Rehearse it once
+against a clock — the per-divider checks are the contract, not the total.
 
 The shape: the two contributions the talk is actually about are the policy
 (part 1, with part 2 on making it real time) and the workflow layer (part 3,
@@ -1972,13 +1972,19 @@ What runs, what does not, and what I would do next
 </p>
 
 <!--
-Clock check: minute 32 of 45. Seven slides and then the demo — these are short,
+Clock check: minute 32 of 45. Four slides and then the demo — these are short,
 and they are the ones that decide what the room remembers.
 
-Do not speed up here. If you are late, drop "What I would keep from this" and
-fold its second point into the conclusion; if you are very late, skip the live
-demo at the end and offer it during the questions instead. Both are cheaper
-than rushing the research questions.
+The part is cut to what the rover actually did: the pipeline end to end, the
+camera fault that bounds every claim on it, the research questions, and what
+comes next. The ERC outcome is one click on the research-questions slide, and
+the two competition slides that used to be here are in the appendix if the room
+asks. "What I would keep from this" is gone too — it re-listed the work and then
+said the conclusion twice.
+
+Do not speed up here. If you are late, skip the live demo at the end and offer
+it during the questions instead; that is cheaper than rushing the research
+questions.
 -->
 
 ---
@@ -2095,7 +2101,7 @@ camera, or backlash after a collision.
 </div>
 
 <!--
-This slide is now the setup for the competition slide four on: the fault
+This slide is now the setup for one clause on the conclusion slide: the fault
 described here is the one that stopped the policy from running at the ERC. Do
 not spend the punchline here — just make sure the room understands that a
 corrupted frame reaches the policy unfiltered and that one bad camera lags every
@@ -2122,250 +2128,91 @@ world it needs several people, equipment, and a favourable weather forecast.
 
 ---
 
-# Which policy the rover competes with
-
-<div class="grid grid-cols-2 gap-12 mt-4">
-<div>
-
-<div class="kicker mb-2">The decision</div>
-
-The **per-task ACT policies**, one per substep, inherited from P8 and served
-through the same TensorRT path.
-
-<p class="note mt-3">
-A judgement made under a data and time budget. No controlled comparison stands
-behind it, and the camera faults are part of why.
-</p>
-
-</div>
-<div class="pt-2">
-
-<div class="takeaway warn">
-ACT is smaller and each policy covers <em>one</em> motion, so it reaches usable
-behaviour on the demonstrations already recorded.
-</div>
-
-<div class="takeaway mt-5">
-SmolVLA carries every substep in one set of weights. Bringing it to that
-standard asks for more demonstrations and more training time than remained.
-</div>
-
-<p class="note mt-4">
-Both load through the same controller, so the choice is a configuration entry.
-The Jetson was never the obstacle: SmolVLA meets the cycle budget with 20 ms
-to spare.
-</p>
-
-</div>
-</div>
-
-<!--
-Epilogue on the next slide: in the event neither policy ran, because the camera
-went before the substep did. Say "competes with" in the past tense now, and let
-the next slide carry what actually happened.
-
-Say this without defensiveness. It is the most likely question in the Q&A and
-the answer is better than it sounds.
-
-What is NOT the reason: latency. SmolVLA runs inside the control budget on the
-engines, and the ACT models were never needed as a fallback for speed. The
-reason is demonstrations, and the report is explicit that this is a judgement
-rather than a measurement — nothing in the rover testing separates the two
-architectures cleanly.
-
-What that leaves standing: the architecture argument is unchanged. One model
-covers every substep, the instruction re-tasks it, and post-training improves
-it without new demonstrations. What it lacks is data and time to train on it.
-And the recording interface built here is what produces data — including from
-the ERC runs themselves, which are recorded as bags and convert straight into
-training input.
--->
-
----
-
-# At the competition
-
-<div class="grid grid-cols-3 gap-6 mt-5 text-sm">
-
-<div class="takeaway">
-<div class="kicker mb-2">Workflow layer</div>
-<strong>Ran without a failure</strong>
-</div>
-
-<div class="takeaway">
-<div class="kicker mb-2">Approach phase</div>
-<strong>Aligned as measured.</strong> 
-</div>
-
-<div class="takeaway warn">
-<div class="kicker mb-2">The policy</div>
-<strong>Not tried.</strong> 
-</div>
-
-
-
-</div>
-
-<!--
-This is the slide the report could not have: it says "submitted before the ERC,
-so no competition results exist yet". Say that out loud once — the examiners
-have read that sentence — and then give them the three outcomes.
-
-Take them in the order the boxes are in, and resist inflating any of them.
-
-  1. The WORKFLOW LAYER is the unambiguous success. It ran across several tasks
-     without a failure, and it earned automation points outside the maintenance
-     panel as well. That is the contribution with the strongest real-world
-     evidence behind it, and it is the one built to be used by people who did
-     not write it.
-
-  2. The APPROACH PHASE aligned, at the 18.1 mm the report measures. What cost time
-     was a configuration and rules problem rather than the vision: part of it
-     was ours, decided under pressure in the days before the event. Own that
-     plainly rather than attributing it to the rules alone — it reads better and
-     it is true.
-
-  3. The POLICY never got to run. A gripper camera had degraded, and with a
-     corrupted observation feeding a policy that commands joint positions
-     directly, the call was to operate that substep manually rather than risk
-     the manipulator. That is a decision, not a crash, and it is worth saying in
-     those words.
-
-The connection worth making, because it is the honest version of an "I told you
-so": the failure mode that stopped the policy is exactly the one chapter 5
-documents and quantifies — 20 of 135 frames hit indoors, only 31 of 131 clean
-outdoors, and one bad camera lagging every other stream through the encoder.
-The report named it as the top reliability item before the competition, and the
-competition agreed.
-
-And it bears on RQ3 as much as on RQ1: handing a substep back to a human
-because the observation could not be trusted is the recovery path the third
-research question asks for, exercised for real rather than in the laboratory.
-
-If asked whether SmolVLA would have done better: no reason to think so. It reads
-the same three camera streams. The blocker was the observation, not the policy.
--->
-
----
-
 # The three questions, answered
 
-<div class="grid grid-cols-3 gap-8 mt-5 text-sm">
+<div class="grid grid-cols-3 gap-10 mt-14">
 
 <div>
 <div class="kicker mb-3">RQ1 — automation and RL</div>
 
-Approach and manipulation, automated by different tools; workflows above them
-so a task is a graph rather than a program.
+<div class="verdict">Yes</div>
 
-<div class="takeaway mt-4">
-RL enters as <strong>post-training on the policy's own rollouts</strong>:
-68.1 % against 62.9 %, in simulation.
-</div>
+<p class="note mt-3">68.1 % against 62.9 %, in simulation</p>
 </div>
 
 <div>
 <div class="kicker mb-3">RQ2 — marker-free depth</div>
 
-<div class="takeaway warn">
-<strong>Not by a result.</strong> The grid is in every frame and in the deployed
-observation, with no ablation to show the policy uses it.
-</div>
+<div class="verdict warn">Not by a result</div>
 
-<p class="note mt-3">
-And the deployed approach phase still needs three markers on the board. Answered
-for the <em>element</em>, not for the environment.
-</p>
+<p class="note mt-3">Shipped in every observation. No ablation.</p>
 </div>
 
 <div>
 <div class="kicker mb-3">RQ3 — errors and plan changes</div>
 
-Below: a heartbeat that stops on absence, a latching e-stop, cancellable phases.
+<div class="verdict">Yes</div>
 
-<div class="takeaway mt-4">
-Above: phases with terminal results, so the workflow retries, escalates, or
-hands back to a human.
-</div>
+<p class="note mt-3">Stopping below the autonomy, terminal results above it.</p>
 </div>
 
 </div>
 
-<div class="takeaway mt-8" v-click>
-At the ERC: the workflow layer ran across tasks without a failure — and a
-degraded camera was handed back to an operator rather than driven blind.
+<div class="takeaway mt-16" v-click>
+At the ERC the workflow layer ran <strong>without a failure</strong>. The policy
+was never tried.
 </div>
+
+<style>
+.verdict {
+  font-size: 1.7rem;
+  font-weight: 600;
+  line-height: 1.15;
+  padding-bottom: 0.35rem;
+  border-bottom: 3px solid var(--fhnw-black);
+}
+.verdict.warn { border-bottom-color: var(--fhnw-yellow); }
+</style>
 
 <!--
-Two minutes. The middle column is the one to deliver without flinching.
+Two minutes, and the slide is three words plus a click. Everything below is
+yours to say; do not read the notes lines out as if they were bullets.
 
-The depth grid is kept on a cost argument — one configuration entry, 64 numbers
-in a vector that was padded anyway — and not on a demonstrated gain. The
-experiment that would settle it is two training runs on the same recordings
-differing in one flag, and then enough real-world executions to resolve the
-difference against the arm's own run-to-run variance. It was the executions,
-not the training, that did not fit.
+RQ1. Approach and manipulation are automated by different tools, with workflows
+above them so a task is a graph rather than a program. RL enters as
+post-training on the policy's OWN rollouts — 68.1 against 62.9 per cent, in
+simulation, and the qualifier is not optional.
 
-There is no reason to expect that adding sensor values harms the policy, and
-that is a weaker claim than "it helps". Say the weaker one.
+RQ2 is the middle column and it is the one to deliver without flinching. The
+depth grid is in every frame and in the deployed observation, but there is no
+ablation to show the policy uses it, and the deployed approach phase still needs
+three markers on the board. Answered for the ELEMENT, not for the environment.
+
+The grid is kept on a cost argument — one configuration entry, 64 numbers in a
+vector that was padded anyway — and not on a demonstrated gain. The experiment
+that would settle it is two training runs on the same recordings differing in
+one flag, and then enough real-world executions to resolve the difference
+against the arm's own run-to-run variance. It was the executions, not the
+training, that did not fit. There is no reason to expect that adding sensor
+values harms the policy, and that is a weaker claim than "it helps" — say the
+weaker one.
+
+RQ3. Below the autonomy: a heartbeat that stops on absence, a latching e-stop,
+cancellable phases. Above it: phases with terminal results, so the workflow
+retries, escalates, or hands back to a human.
+
+THE ERC, on the click, is where the competition slides used to be — three
+sentences, not a section. The workflow layer ran across tasks without a failure.
+The approach phase aligned as measured. The policy was not tried: the camera
+fault two slides back is why, and the rover ran the inherited per-task ACT
+policies instead — a judgement under a data and time budget, with no controlled
+comparison behind it. The Jetson was never the obstacle; SmolVLA meets the cycle
+budget with 20 ms to spare, and both load through the same controller, so the
+choice is a configuration entry.
+
+If the room wants the detail, "Which policy the rover competes with" and "At the
+competition" are in the appendix, back to back.
 -->
-
----
-
-# What I would keep from this
-
-<div class="mt-6">
-
-<div class="takeaway text-base py-3">
-<strong>1. A task is a canvas, not a program.</strong>
-</div>
-
-<div class="takeaway text-base py-3 mt-4">
-<strong>2. Mechanical tolerance beats control accuracy.</strong>
-</div>
-
-<div class="takeaway text-base py-3 mt-4">
-<strong>3. Edge AI for robotics is viable — but more training is needed.</strong>
-</div>
-
-<div class="takeaway warn text-base py-3 mt-4">
-<strong>4. You can only imitate what you can demonstrate.</strong>
-</div>
-
-</div>
-
-<!--
-Four headlines, one line each, and they are yours to finish. Two of them come
-from the half of the work that ran on the rover, which is the half a closing
-slide should not be shy about.
-
-  1. A TASK IS A CANVAS. The deep-sampling workflow — seventy nodes, five
-     phases, three complete runs — was built by another team member who never
-     wrote a line of the node package. The maintenance workflow runs on the
-     rover. That is the code-free claim being paid, not asserted.
-  2. MECHANICAL TOLERANCE. A chamfer and a shaking wrist solved a tool change
-     that no controller change would have: nine pickups in ten, and the tenth
-     latched on a retry. On real hardware, geometry is cheaper than accuracy.
-  3. EDGE AI. The viable half is measured: two models that were cloud workloads
-     a few years ago run on two Jetsons, 1357 ms a chunk down to 330, and the
-     cycle closes at 30 of the 50 ms — with export, precision and distillation
-     doing that work, since the policy as trained misses the deadline by 31 ms.
-     The BUT is the behaviour, not the compute: reaching the success rates the
-     task needs asks for more demonstrations and more training time than the
-     project had. The board was never the obstacle.
-  4. DEMONSTRATE. The plug is untrained because it cannot be teleoperated. On a
-     real robot the data-collection interface is part of the learning system —
-     and the corollary is that rollouts amplify what the policy already does,
-     while a missing skill has to come back from the demonstrations.
-
-If you are short of time, say 1 and 4 and stop: the layer that worked, and the
-honest bound on the layer that is not finished.
-
-The fifth candidate, if someone asks for one, is about agents: give one a real
-oracle or its results will pass while being wrong. That is the TensorRT story,
-and it generalises.
--->
-
 ---
 
 # Where it goes next
@@ -2584,12 +2431,14 @@ PREPARED ANSWERS
   recorded and how good it was.
 
 BACKUP SLIDES FOLLOW: the SmolVLA architecture and its numbers · the critic ·
-engine accuracy · latency table · the f-plus labels · guidance baking ·
-the label composition · the n8n node package · agent transcripts.
+engine accuracy · latency table · the f-plus labels · guidance baking · the
+label composition · the n8n node package · what the arm does · the two
+competition slides · the workflow layer measured · what I would keep from this.
 -->
 
 ---
 layout: section
+appendix: true
 ---
 
 <div class="kicker mb-4">Backup</div>
@@ -3386,6 +3235,132 @@ That has not been tried.
 
 ---
 
+# Which policy the rover competes with
+
+<div class="grid grid-cols-2 gap-12 mt-4">
+<div>
+
+<div class="kicker mb-2">The decision</div>
+
+The **per-task ACT policies**, one per substep, inherited from P8 and served
+through the same TensorRT path.
+
+<p class="note mt-3">
+A judgement made under a data and time budget. No controlled comparison stands
+behind it, and the camera faults are part of why.
+</p>
+
+</div>
+<div class="pt-2">
+
+<div class="takeaway warn">
+ACT is smaller and each policy covers <em>one</em> motion, so it reaches usable
+behaviour on the demonstrations already recorded.
+</div>
+
+<div class="takeaway mt-5">
+SmolVLA carries every substep in one set of weights. Bringing it to that
+standard asks for more demonstrations and more training time than remained.
+</div>
+
+<p class="note mt-4">
+Both load through the same controller, so the choice is a configuration entry.
+The Jetson was never the obstacle: SmolVLA meets the cycle budget with 20 ms
+to spare.
+</p>
+
+</div>
+</div>
+
+<!--
+Epilogue on the next slide: in the event neither policy ran, because the camera
+went before the substep did. Say "competes with" in the past tense now, and let
+the next slide carry what actually happened.
+
+Say this without defensiveness. It is the most likely question in the Q&A and
+the answer is better than it sounds.
+
+What is NOT the reason: latency. SmolVLA runs inside the control budget on the
+engines, and the ACT models were never needed as a fallback for speed. The
+reason is demonstrations, and the report is explicit that this is a judgement
+rather than a measurement — nothing in the rover testing separates the two
+architectures cleanly.
+
+What that leaves standing: the architecture argument is unchanged. One model
+covers every substep, the instruction re-tasks it, and post-training improves
+it without new demonstrations. What it lacks is data and time to train on it.
+And the recording interface built here is what produces data — including from
+the ERC runs themselves, which are recorded as bags and convert straight into
+training input.
+-->
+
+---
+
+# At the competition
+
+<div class="grid grid-cols-3 gap-6 mt-5 text-sm">
+
+<div class="takeaway">
+<div class="kicker mb-2">Workflow layer</div>
+<strong>Ran without a failure</strong>
+</div>
+
+<div class="takeaway">
+<div class="kicker mb-2">Approach phase</div>
+<strong>Aligned as measured.</strong> 
+</div>
+
+<div class="takeaway warn">
+<div class="kicker mb-2">The policy</div>
+<strong>Not tried.</strong> 
+</div>
+
+
+
+</div>
+
+<!--
+This is the slide the report could not have: it says "submitted before the ERC,
+so no competition results exist yet". Say that out loud once — the examiners
+have read that sentence — and then give them the three outcomes.
+
+Take them in the order the boxes are in, and resist inflating any of them.
+
+  1. The WORKFLOW LAYER is the unambiguous success. It ran across several tasks
+     without a failure, and it earned automation points outside the maintenance
+     panel as well. That is the contribution with the strongest real-world
+     evidence behind it, and it is the one built to be used by people who did
+     not write it.
+
+  2. The APPROACH PHASE aligned, at the 18.1 mm the report measures. What cost time
+     was a configuration and rules problem rather than the vision: part of it
+     was ours, decided under pressure in the days before the event. Own that
+     plainly rather than attributing it to the rules alone — it reads better and
+     it is true.
+
+  3. The POLICY never got to run. A gripper camera had degraded, and with a
+     corrupted observation feeding a policy that commands joint positions
+     directly, the call was to operate that substep manually rather than risk
+     the manipulator. That is a decision, not a crash, and it is worth saying in
+     those words.
+
+The connection worth making, because it is the honest version of an "I told you
+so": the failure mode that stopped the policy is exactly the one chapter 5
+documents and quantifies — 20 of 135 frames hit indoors, only 31 of 131 clean
+outdoors, and one bad camera lagging every other stream through the encoder.
+The report named it as the top reliability item before the competition, and the
+competition agreed.
+
+And it bears on RQ3 as much as on RQ1: handing a substep back to a human
+because the observation could not be trusted is the recovery path the third
+research question asks for, exercised for real rather than in the laboratory.
+
+If asked whether SmolVLA would have done better: no reason to think so. It reads
+the same three camera streams. The blocker was the observation, not the policy.
+-->
+
+---
+
 # The workflow layer, measured
 
 <div class="grid grid-cols-2 gap-10 mt-4">
@@ -3502,4 +3477,60 @@ Drilling, driving and operating the panel each assume they have the rover to
 themselves, and the competition setup does not reach the limit because the rover
 performs one task at a time by procedure. An interlock is needed before
 actuating workflows are ever triggered automatically.
+-->
+
+---
+
+# What I would keep from this
+
+<div class="mt-6">
+
+<div class="takeaway text-base py-3">
+<strong>1. A task is a canvas, not a program.</strong>
+</div>
+
+<div class="takeaway text-base py-3 mt-4">
+<strong>2. Mechanical tolerance beats control accuracy.</strong>
+</div>
+
+<div class="takeaway text-base py-3 mt-4">
+<strong>3. Edge AI for robotics is viable — but more training is needed.</strong>
+</div>
+
+<div class="takeaway warn text-base py-3 mt-4">
+<strong>4. You can only imitate what you can demonstrate.</strong>
+</div>
+
+</div>
+
+<!--
+Four headlines, one line each, and they are yours to finish. Two of them come
+from the half of the work that ran on the rover, which is the half a closing
+slide should not be shy about.
+
+  1. A TASK IS A CANVAS. The deep-sampling workflow — seventy nodes, five
+     phases, three complete runs — was built by another team member who never
+     wrote a line of the node package. The maintenance workflow runs on the
+     rover. That is the code-free claim being paid, not asserted.
+  2. MECHANICAL TOLERANCE. A chamfer and a shaking wrist solved a tool change
+     that no controller change would have: nine pickups in ten, and the tenth
+     latched on a retry. On real hardware, geometry is cheaper than accuracy.
+  3. EDGE AI. The viable half is measured: two models that were cloud workloads
+     a few years ago run on two Jetsons, 1357 ms a chunk down to 330, and the
+     cycle closes at 30 of the 50 ms — with export, precision and distillation
+     doing that work, since the policy as trained misses the deadline by 31 ms.
+     The BUT is the behaviour, not the compute: reaching the success rates the
+     task needs asks for more demonstrations and more training time than the
+     project had. The board was never the obstacle.
+  4. DEMONSTRATE. The plug is untrained because it cannot be teleoperated. On a
+     real robot the data-collection interface is part of the learning system —
+     and the corollary is that rollouts amplify what the policy already does,
+     while a missing skill has to come back from the demonstrations.
+
+If you are short of time, say 1 and 4 and stop: the layer that worked, and the
+honest bound on the layer that is not finished.
+
+The fifth candidate, if someone asks for one, is about agents: give one a real
+oracle or its results will pass while being wrong. That is the TensorRT story,
+and it generalises.
 -->
