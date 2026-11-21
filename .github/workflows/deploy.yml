@@ -16,6 +16,8 @@ on:
 
 permissions:
   contents: read
+  # GitHub's OIDC token is the job's login to the tailnet.
+  id-token: write
 
 # One deploy at a time, and never cancel one midway: the rsync --delete would
 # leave the served directory half-written.
@@ -40,24 +42,27 @@ jobs:
         if: github.event_name == 'pull_request'
         run: npm run build
 
-      - name: Load the deploy key and pin the host
+      # The server is reached over the tailnet: the job joins as tag:ci with its
+      # GitHub OIDC token (no stored secret) and logs in as "deploy" through
+      # Tailscale SSH, which needs no key. Set up in ~/work/privat/infra.
+      - name: Join the tailnet
         if: github.event_name != 'pull_request'
-        env:
-          SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
+        uses: tailscale/github-action@064b10558093f38325e838ddea35486bdc6b1d5c # v4.4.0
+        with:
+          oauth-client-id: ${{ vars.TS_OAUTH_CLIENT_ID }}
+          audience: ${{ vars.TS_AUDIENCE }}
+          tags: tag:ci
+
+      - name: Address of the server
+        if: github.event_name != 'pull_request'
         run: |
-          mkdir -p ~/.ssh
-          chmod 700 ~/.ssh
-          # install first, so the key is never briefly world-readable.
-          install -m 600 /dev/null ~/.ssh/id_deploy
-          printf '%s\n' "$SSH_PRIVATE_KEY" > ~/.ssh/id_deploy
-          cat deploy/known_hosts >> ~/.ssh/known_hosts
-          cat >> ~/.ssh/config <<'EOF'
-          Host *
-            IdentityFile ~/.ssh/id_deploy
-            IdentitiesOnly yes
-            StrictHostKeyChecking yes
-            BatchMode yes
-          EOF
+          # MagicDNS is off in the tailnet; tailscale knows the address by name.
+          echo "P9_SERVER=deploy@$(tailscale ip -4 rover)" >> "$GITHUB_ENV"
+          echo "P9_REMOTE_DIR=/data/p9" >> "$GITHUB_ENV"
+          mkdir -p ~/.ssh && chmod 700 ~/.ssh
+          # The tailnet authenticates the server, so a rebuilt server's new host
+          # key is accepted.
+          printf 'Host *\n  StrictHostKeyChecking accept-new\n  BatchMode yes\n' > ~/.ssh/config
 
       - name: Build and deploy
         if: github.event_name != 'pull_request'
