@@ -139,9 +139,9 @@ steps are skipped, so a PR never touches the server.
 
 | Piece | Where |
 |---|---|
-| `SSH_PRIVATE_KEY` | repo secret; its public half is `github@p9-web` in the server's `authorized_keys` |
-| host key | pinned in `deploy/known_hosts`, so CI never trusts-on-first-use |
-| target host | derived from `site.config.json` (`debian@<site label>.<baseDomain>`), overridable with `P9_SERVER` |
+| login | Tailscale: the job joins the tailnet as `tag:ci` with its GitHub OIDC token (repo variables `TS_OAUTH_CLIENT_ID`, `TS_AUDIENCE`; no secret) and logs in as `deploy` through Tailscale SSH, no key. Set up in `~/work/privat/infra` |
+| host key | accepted on first use: the tailnet authenticates the server |
+| target host | in CI `deploy@<tailnet address of rover>` with `P9_REMOTE_DIR=/data/p9`; by hand derived from `site.config.json` (`debian@<site label>.<baseDomain>`); both overridable with `P9_SERVER` / `P9_REMOTE_DIR` |
 
 Deploying by hand still works and does exactly the same thing:
 

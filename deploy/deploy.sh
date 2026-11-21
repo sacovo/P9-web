@@ -13,8 +13,8 @@ cd "$REPO_ROOT"
 
 # The site's own hostname is also the box it is served from, so the target
 # follows site.config.json like everything else rather than being a second
-# place to edit when the zone moves. deploy/known_hosts pins its host key, so
-# a changed name needs a refreshed pin too.
+# place to edit when the zone moves. CI overrides it (P9_SERVER) with the
+# server's tailnet address.
 config_domain="$(node -p "require('./site.config.json').baseDomain")"
 site_label="$(node -p "require('./site.config.json').labels.site")"
 
